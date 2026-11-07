@@ -4,7 +4,7 @@
   "private": true,
   "description": "QualityLab: a QA demonstration web application with simulated e-commerce, banking, and travel modules.",
   "engines": {
-    "node": ">=20.19.0"
+    "node": "24.x"
   },
   "scarfSettings": {
     "enabled": false

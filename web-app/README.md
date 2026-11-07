@@ -4,7 +4,7 @@ The Next.js application, REST API, database schema, seed data, and tests for Qua
 
 ## Requirements
 
-- Node.js 20.19 or newer
+- Node.js 24
 - npm
 - PostgreSQL, which `npm run db:start` provides for local use with no system install
 
