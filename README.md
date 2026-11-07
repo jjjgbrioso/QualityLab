@@ -4,11 +4,13 @@ QualityLab is a personal QA engineering project by Job G. Brioso. It is a demons
 
 The application simulates three business domains behind one login and one REST API: e-commerce, banking, and hotel booking. It uses fictional data, simulated payments, and no real banking or payment integrations.
 
+**Live demo:** https://quality-lab-teal.vercel.app ([API docs](https://quality-lab-teal.vercel.app/api-docs), [health check](https://quality-lab-teal.vercel.app/api/v1/health))
+
 ## Project status
 
 | Phase | Scope | Status |
 | --- | --- | --- |
-| 1 | QA demonstration web application (`web-app/`) | Built and validated locally. Not yet deployed. |
+| 1 | QA demonstration web application (`web-app/`) | Deployed to STAGING on Vercel, with a hosted PostgreSQL database |
 | Later | Selenium Java, Playwright TypeScript, API testing, JMeter | Not started |
 
 ## Repository structure

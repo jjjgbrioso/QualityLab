@@ -2,6 +2,15 @@
 
 How to automate against QualityLab from Selenium, Playwright, API tools, and JMeter.
 
+## Choose a target
+
+| Environment | Base URL | Use it for |
+| --- | --- | --- |
+| LOCAL | `http://localhost:3000` | Day-to-day test runs, and anything that resets data |
+| STAGING | `https://quality-lab-teal.vercel.app` | Checks against the deployed application |
+
+STAGING data is public and shared, so anyone can change it. Tests there should create their own data rather than rely on exact baseline values. Run load tests against LOCAL, or check the [hosted database limits](deployment.md#known-limits-of-the-public-demo) first.
+
 ## Start from a known state
 
 Reset before a test run, so every run starts from the same data:
@@ -10,7 +19,7 @@ Reset before a test run, so every run starts from the same data:
 npm run db:reset
 ```
 
-Run that from `web-app`. The baseline is described in [test-data.md](test-data.md). Tests that create data should use unique values, or run after a reset.
+Run that from `web-app`. It resets LOCAL. To reset STAGING, see [Resetting STAGING](deployment.md#resetting-staging). The baseline is described in [test-data.md](test-data.md). Tests that create data should use unique values, or run after a reset.
 
 ## Choosing locators
 
