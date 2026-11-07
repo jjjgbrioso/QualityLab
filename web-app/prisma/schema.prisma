@@ -1,0 +1,293 @@
+// QualityLab data model.
+// Money is stored as integer cents so totals never depend on floating point.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum OrderStatus {
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CAPTURED
+  REFUNDED
+}
+
+enum InventoryReason {
+  CHECKOUT
+  CANCELLATION
+  ADMIN_ADJUSTMENT
+}
+
+enum BankAccountType {
+  CHECKING
+  SAVINGS
+}
+
+enum BankAccountStatus {
+  ACTIVE
+  FROZEN
+}
+
+enum BankTransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum RoomType {
+  STANDARD
+  DELUXE
+  SUITE
+  FAMILY
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  role         Role       @default(CUSTOMER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  cartItems       CartItem[]
+  orders          Order[]
+  bankAccounts    BankAccount[]
+  bookings        Booking[]
+  idempotencyKeys IdempotencyKey[]
+}
+
+// Holds the jti of tokens ended by logout, until they would have expired anyway.
+model RevokedToken {
+  jti       String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  description String
+  category    String
+  brand       String
+  priceCents  Int
+  stock       Int
+  rating      Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  movements  InventoryMovement[]
+
+  @@index([category])
+  @@index([priceCents])
+}
+
+model InventoryMovement {
+  id        String          @id @default(cuid())
+  productId String
+  delta     Int
+  stockAfter Int
+  reason    InventoryReason
+  note      String?
+  actorId   String?
+  createdAt DateTime        @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, createdAt])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  userId        String
+  status        OrderStatus   @default(PAID)
+  paymentStatus PaymentStatus @default(CAPTURED)
+  subtotalCents Int
+  taxCents      Int
+  shippingCents Int
+  totalCents    Int
+  shipFullName  String
+  shipAddress   String
+  shipCity      String
+  shipPostcode  String
+  shipCountry   String
+  cardBrand     String
+  cardLast4     String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  cancelledAt   DateTime?
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@index([userId, createdAt])
+}
+
+model OrderItem {
+  id             String @id @default(cuid())
+  orderId        String
+  productId      String
+  productName    String
+  sku            String
+  unitPriceCents Int
+  quantity       Int
+  lineTotalCents Int
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+}
+
+model BankAccount {
+  id            String            @id @default(cuid())
+  accountNumber String            @unique
+  userId        String
+  name          String
+  type          BankAccountType   @default(CHECKING)
+  status        BankAccountStatus @default(ACTIVE)
+  currency      String            @default("USD")
+  balanceCents  Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions BankTransaction[]
+
+  @@index([userId])
+}
+
+model BankTransaction {
+  id                String              @id @default(cuid())
+  reference         String
+  accountId         String
+  type              BankTransactionType
+  amountCents       Int
+  balanceAfterCents Int
+  counterparty      String?
+  description       String?
+  createdAt         DateTime            @default(now())
+
+  account BankAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, reference])
+  @@index([accountId, createdAt])
+}
+
+// One row per Idempotency-Key, written in the same transaction as the money movement.
+model IdempotencyKey {
+  id           String   @id @default(cuid())
+  userId       String
+  key          String
+  scope        String
+  requestHash  String
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+}
+
+model Hotel {
+  id          String   @id @default(cuid())
+  name        String
+  city        String
+  country     String
+  address     String
+  description String
+  starRating  Int
+  amenities   String[]
+  createdAt   DateTime @default(now())
+
+  rooms Room[]
+
+  @@index([city])
+}
+
+model Room {
+  id                 String   @id @default(cuid())
+  hotelId            String
+  name               String
+  type               RoomType
+  description        String
+  maxGuests          Int
+  pricePerNightCents Int
+  quantity           Int
+
+  hotel    Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  @@index([hotelId])
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  bookingNumber String        @unique
+  userId        String
+  roomId        String
+  checkIn       DateTime      @db.Date
+  checkOut      DateTime      @db.Date
+  guests        Int
+  nights        Int
+  totalCents    Int
+  status        BookingStatus @default(CONFIRMED)
+  createdAt     DateTime      @default(now())
+  cancelledAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  room Room @relation(fields: [roomId], references: [id], onDelete: Restrict)
+
+  @@index([userId, createdAt])
+  @@index([roomId, checkIn, checkOut])
+}
