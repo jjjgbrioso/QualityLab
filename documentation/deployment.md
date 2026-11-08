@@ -32,7 +32,7 @@ Environment files are git-ignored. Only the `.example` templates are committed, 
 The Vercel project is linked to GitHub, so every push to `main` deploys to STAGING. After a push, confirm the site as an anonymous visitor:
 
 1. `/api/v1/health` returns 200, with `environment` set to `staging` and database status `up`.
-2. `/shop` redirects to the login page, and lists products after you sign in.
+2. In a browser, `/shop` redirects to the login page, and lists products after you sign in. Command-line tools such as `curl` get HTTP 200 with the redirect in the page instead. See the [automation guide](automation-guide.md#behaviour-to-plan-for).
 
 Check the health endpoint rather than the build status. A build can succeed, and static pages can load, while the database connection is broken.
 

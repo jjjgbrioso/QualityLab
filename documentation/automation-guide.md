@@ -76,6 +76,7 @@ Other shared patterns:
 - **Sort selects** on the shop and cruise search submit as soon as they change.
 - **Cart quantity** saves when the field loses focus, so tab out of it after typing.
 - **Sign-in first:** there is no Login link in the navigation. Every E-commerce, Banking, and Travel page requires a login. A signed-out visit goes to `/login?next=...` and returns to the same page, filters included, after login. The home page, API docs, login, and registration are public.
+- **Signed-out redirects happen in the browser:** module pages stream a loading placeholder first, so a signed-out request returns HTTP 200, not 307. The page then redirects to `/login?next=...` with a script and a `<meta http-equiv="refresh">` tag, and it contains no module data. Browsers, Playwright, and Selenium follow it, so assert on the final URL. A plain HTTP client sees only the 200, so check that the body contains `/login?next=` and no module test ids, such as `product-card-`.
 - **Filters** are plain GET forms, so you can open a filtered page directly with a URL.
 - **Cancel** uses an inline confirmation, not a native browser dialog.
 - **Simulated dates** in the seed data are fixed in 2030 and 2024, so scenarios do not expire.
