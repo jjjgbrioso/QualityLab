@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Photo } from "@/components/art";
 import { StayFilter } from "@/components/StayFilter";
 import { Alert, Badge, buttonStyles, Card, linkStyles, PageHeader } from "@/components/ui";
+import { requirePageUser } from "@/lib/auth/session";
 import { formatCents } from "@/lib/money";
-import { loadForPage, parsePageQuery, type SearchParams } from "@/lib/page-helpers";
+import { loadForPage, parsePageQuery, pathWithQuery, type SearchParams } from "@/lib/page-helpers";
 import { getHotel } from "@/lib/services/hotels";
 import { stayQuerySchema } from "@/lib/validation/travel";
 
@@ -17,7 +19,9 @@ export default async function HotelPage({
   searchParams: SearchParams;
 }) {
   const { id } = await params;
-  const { query, errors } = parsePageQuery(await searchParams, stayQuerySchema);
+  const raw = await searchParams;
+  await requirePageUser(pathWithQuery(`/travel/hotels/${id}`, raw));
+  const { query, errors } = parsePageQuery(raw, stayQuerySchema);
   const hotel = await loadForPage(() => getHotel(id, query));
 
   const stayQuery = new URLSearchParams();
@@ -30,7 +34,7 @@ export default async function HotelPage({
 
   return (
     <>
-      <Link href="/travel" className={linkStyles} data-testid="hotel-back-link">
+      <Link href="/travel/hotels" className={linkStyles} data-testid="hotel-back-link">
         Back to hotels
       </Link>
       <div className="mt-4">
@@ -41,6 +45,9 @@ export default async function HotelPage({
         />
       </div>
 
+      {hotel.imageUrl ? (
+        <Photo src={hotel.imageUrl} alt={hotel.name} className="mb-4 h-56 rounded-xl sm:h-72" priority testId="hotel-detail-image" />
+      ) : null}
       <p className="mb-3 text-sm text-muted" data-testid="hotel-description">{hotel.description}</p>
       <div className="mb-6 flex flex-wrap gap-1" data-testid="hotel-amenities">
         {hotel.amenities.map((amenity) => (

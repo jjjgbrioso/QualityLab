@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BookRoomButton } from "@/components/forms/BookRoomButton";
 import { StayFilter } from "@/components/StayFilter";
-import { Alert, buttonStyles, Card, linkStyles, PageHeader, SummaryRow } from "@/components/ui";
-import { getSessionUser } from "@/lib/auth/session";
+import { Alert, Card, linkStyles, PageHeader, SummaryRow } from "@/components/ui";
+import { requirePageUser } from "@/lib/auth/session";
 import { formatDisplayDate } from "@/lib/dates";
 import { formatCents } from "@/lib/money";
-import { loadForPage, parsePageQuery, type SearchParams } from "@/lib/page-helpers";
+import { loadForPage, parsePageQuery, pathWithQuery, type SearchParams } from "@/lib/page-helpers";
 import { getRoom } from "@/lib/services/hotels";
 import { stayQuerySchema } from "@/lib/validation/travel";
 
@@ -21,14 +21,14 @@ export default async function RoomPage({
 }) {
   const { id } = await params;
   const raw = await searchParams;
+  await requirePageUser(pathWithQuery(`/travel/rooms/${id}`, raw));
   const { query, errors } = parsePageQuery(raw, stayQuerySchema);
-  const [room, user] = await Promise.all([loadForPage(() => getRoom(id, query)), getSessionUser()]);
+  const room = await loadForPage(() => getRoom(id, query));
 
   const { checkIn, checkOut } = query;
   const guests = query.guests ?? 2;
   const tooManyGuests = guests > room.maxGuests;
   const canBook = errors.length === 0 && room.available === true && !tooManyGuests;
-  const here = `/travel/rooms/${id}?${new URLSearchParams({ checkIn: checkIn ?? "", checkOut: checkOut ?? "", guests: String(guests) })}`;
 
   return (
     <>
@@ -91,12 +91,7 @@ export default async function RoomPage({
               {tooManyGuests ? (
                 <Alert tone="error" testId="booking-guest-limit">This room sleeps at most {room.maxGuests} guests.</Alert>
               ) : null}
-              {canBook && user ? <BookRoomButton roomId={room.id} checkIn={checkIn} checkOut={checkOut} guests={guests} /> : null}
-              {canBook && !user ? (
-                <Link href={`/login?next=${encodeURIComponent(here)}`} className={buttonStyles.primary} data-testid="booking-login-link">
-                  Sign in to book
-                </Link>
-              ) : null}
+              {canBook ? <BookRoomButton roomId={room.id} checkIn={checkIn} checkOut={checkOut} guests={guests} /> : null}
             </>
           )}
         </Card>

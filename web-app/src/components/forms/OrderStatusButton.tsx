@@ -7,7 +7,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 
 export function OrderStatusButton({ orderId, status }: { orderId: string; status: "SHIPPED" | "DELIVERED" }) {
   const router = useRouter();
-  const { pending, error, submit } = useSubmit();
+  const { ready, pending, error, submit } = useSubmit();
 
   const advance = () =>
     submit(
@@ -17,7 +17,7 @@ export function OrderStatusButton({ orderId, status }: { orderId: string; status
 
   return (
     <div>
-      <button type="button" disabled={pending} onClick={advance} className={buttonStyles.secondary} data-testid={`admin-order-advance-${orderId}`}>
+      <button type="button" disabled={!ready || pending} onClick={advance} className={buttonStyles.secondary} data-testid={`admin-order-advance-${orderId}`}>
         {pending ? "Saving..." : `Mark ${status.toLowerCase()}`}
       </button>
       {error ? (

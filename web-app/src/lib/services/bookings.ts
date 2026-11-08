@@ -25,6 +25,7 @@ export function toBookingDto(booking: BookingWithRoom) {
     checkIn: formatDateOnly(booking.checkIn),
     checkOut: formatDateOnly(booking.checkOut),
     guests: booking.guests,
+    leadGuestName: booking.leadGuestName,
     nights: booking.nights,
     totalCents: booking.totalCents,
     room: {
@@ -74,6 +75,7 @@ export async function createBooking(userId: string, input: BookingCreateInput) {
           checkIn: parseDateOnly(input.checkIn),
           checkOut: parseDateOnly(input.checkOut),
           guests: input.guests,
+          leadGuestName: input.leadGuestName,
           nights,
           totalCents: nights * room.pricePerNightCents,
         },

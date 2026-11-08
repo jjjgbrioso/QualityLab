@@ -14,6 +14,7 @@ import {
   productUpdateSchema,
 } from "@/lib/validation/products";
 import { bookingCreateSchema, HOTEL_SORTS } from "@/lib/validation/travel";
+import { CRUISE_SORTS, cruiseBookingCreateSchema } from "@/lib/validation/cruises";
 
 type Json = Record<string, unknown>;
 
@@ -146,6 +147,7 @@ const properties = (fields: Record<string, Json | string>) => ({
 });
 
 const dateTime = { type: "string", format: "date-time" };
+const IMAGE_URL = { type: ["string", "null"], description: "Photo path under the site root, or an https address. Null means no photo." };
 const nullable = (type: string) => ({ type: [type, "null"] });
 
 const schemas: Record<string, Json> = {
@@ -199,9 +201,13 @@ const schemas: Record<string, Json> = {
     category: "string",
     brand: "string",
     priceCents: "integer",
+    listPriceCents: { type: ["integer", "null"], description: "Original price before the sale" },
+    onSale: "boolean",
+    discountPercent: { type: ["integer", "null"] },
     stock: "integer",
     inStock: "boolean",
     rating: "number",
+    imageUrl: IMAGE_URL,
     isActive: "boolean",
     createdAt: dateTime,
     updatedAt: dateTime,
@@ -282,6 +288,7 @@ const schemas: Record<string, Json> = {
     description: "string",
     starRating: "integer",
     amenities: { type: "array", items: { type: "string" } },
+    imageUrl: IMAGE_URL,
     fromPriceCents: "integer",
     matchingRooms: "integer",
   }),
@@ -321,12 +328,94 @@ const schemas: Record<string, Json> = {
     createdAt: dateTime,
     cancelledAt: { ...nullable("string"), format: "date-time" },
   }),
+  Ship: properties({
+    id: "string",
+    name: "string",
+    description: "string",
+    yearLaunched: "integer",
+    guestCapacity: "integer",
+    amenities: { type: "array", items: { type: "string" } },
+    imageUrl: IMAGE_URL,
+    upcomingSailings: "integer",
+    departurePorts: { type: "array", items: { type: "string" } },
+    nextDeparture: { type: ["string", "null"], format: "date" },
+  }),
+  SailingSummary: properties({
+    id: "string",
+    title: "string",
+    destination: "string",
+    departurePort: "string",
+    ports: { type: "array", items: { type: "string" } },
+    departureDate: { type: "string", format: "date" },
+    returnDate: { type: "string", format: "date" },
+    nights: "integer",
+    imageUrl: IMAGE_URL,
+    ship: properties({ id: "string", name: "string", imageUrl: IMAGE_URL }),
+    fromPricePerGuestCents: "integer",
+    cabinsLeft: "integer",
+    soldOut: "boolean",
+    departed: "boolean",
+  }),
+  Cabin: properties({
+    id: "string",
+    type: { type: "string", enum: ["INTERIOR", "OCEAN_VIEW", "BALCONY", "SUITE"] },
+    name: "string",
+    pricePerGuestCents: "integer",
+    maxGuests: "integer",
+    totalCabins: "integer",
+    cabinsLeft: "integer",
+    available: "boolean",
+  }),
+  SailingDetail: properties({
+    id: "string",
+    title: "string",
+    destination: "string",
+    departurePort: "string",
+    ports: { type: "array", items: { type: "string" } },
+    departureDate: { type: "string", format: "date" },
+    returnDate: { type: "string", format: "date" },
+    nights: "integer",
+    departed: "boolean",
+    ship: properties({
+      id: "string",
+      name: "string",
+      description: "string",
+      yearLaunched: "integer",
+      guestCapacity: "integer",
+      amenities: { type: "array", items: { type: "string" } },
+      imageUrl: IMAGE_URL,
+    }),
+    imageUrl: IMAGE_URL,
+    cabins: { type: "array", items: ref("Cabin") },
+  }),
+  CruiseBooking: properties({
+    id: "string",
+    bookingNumber: "string",
+    userId: "string",
+    status: { type: "string", enum: ["CONFIRMED", "CANCELLED"] },
+    guests: "integer",
+    totalCents: "integer",
+    cabin: properties({ id: "string", type: "string", name: "string", pricePerGuestCents: "integer" }),
+    sailing: properties({
+      id: "string",
+      title: "string",
+      departurePort: "string",
+      departureDate: { type: "string", format: "date" },
+      returnDate: { type: "string", format: "date" },
+      nights: "integer",
+    }),
+    ship: properties({ id: "string", name: "string" }),
+    canCancel: "boolean",
+    createdAt: dateTime,
+    cancelledAt: { ...nullable("string"), format: "date-time" },
+  }),
   AdminStats: properties({
     counts: properties({
       users: "integer",
       products: "integer",
       orders: "integer",
       confirmedBookings: "integer",
+      confirmedCruiseBookings: "integer",
       bankAccounts: "integer",
     }),
     revenueCents: "integer",
@@ -393,6 +482,7 @@ const paths: Record<string, Record<string, Json>> = {
         query("minPrice", { type: "number" }, "Minimum price in dollars"),
         query("maxPrice", { type: "number" }, "Maximum price in dollars"),
         query("inStock", { type: "boolean" }, "true or false"),
+        query("onSale", { type: "boolean" }, "true for products with an original price"),
         query("sort", { type: "string", enum: [...PRODUCT_SORTS], default: "name_asc" }, "Sort order"),
         ...pageParams,
       ],
@@ -650,6 +740,94 @@ const paths: Record<string, Record<string, Json>> = {
       errors: [403, 404, 409],
     }),
   },
+  "/api/v1/products/flash-sale": {
+    get: operation({
+      tag: "Products",
+      summary: "In-stock sale items, biggest discount first",
+      schema: { type: "array", items: ref("Product") },
+    }),
+  },
+  "/api/v1/ships": {
+    get: operation({
+      tag: "Cruises",
+      summary: "List ships",
+      schema: { type: "array", items: ref("Ship") },
+    }),
+  },
+  "/api/v1/cruises": {
+    get: operation({
+      tag: "Cruises",
+      summary: "Search upcoming sailings",
+      description: "Prices are per guest. With guests set, sold-out sailings and cabins too small for the party are left out.",
+      parameters: [
+        query("destination", { type: "string" }, "Matches destination, title, or a port"),
+        query("departurePort", { type: "string" }, "Exact departure port, such as Manila"),
+        query("ship", { type: "string" }, "Ship id, such as ship_0001"),
+        query("month", { type: "string", pattern: "^\\d{4}-(0[1-9]|1[0-2])$" }, "Departure month, YYYY-MM"),
+        query("guests", { type: "integer", minimum: 1, maximum: 10 }, "Number of guests"),
+        query("minNights", { type: "integer", minimum: 1, maximum: 30 }, "Minimum nights"),
+        query("maxNights", { type: "integer", minimum: 1, maximum: 30 }, "Maximum nights"),
+        query("sort", { type: "string", enum: [...CRUISE_SORTS], default: "departure_asc" }, "Sort order"),
+        ...pageParams,
+      ],
+      schema: ref("SailingSummary"),
+      paged: true,
+      errors: [400],
+    }),
+  },
+  "/api/v1/cruises/{id}": {
+    get: operation({
+      tag: "Cruises",
+      summary: "Sailing details, itinerary, and cabin availability",
+      parameters: [pathParam("id", "sailing_0001")],
+      schema: ref("SailingDetail"),
+      errors: [404],
+    }),
+  },
+  "/api/v1/cruise-bookings": {
+    get: operation({
+      tag: "Cruises",
+      summary: "My cruise bookings",
+      auth: true,
+      parameters: [
+        query("status", { type: "string", enum: ["CONFIRMED", "CANCELLED"] }, "Filter by status"),
+        ...pageParams,
+      ],
+      schema: ref("CruiseBooking"),
+      paged: true,
+      errors: [400],
+    }),
+    post: operation({
+      tag: "Cruises",
+      summary: "Book a cabin on a sailing",
+      description: "The total is the cabin's per-guest price times the number of guests.",
+      auth: true,
+      body: cruiseBookingCreateSchema,
+      status: 201,
+      schema: ref("CruiseBooking"),
+      errors: [404, 409, 422],
+    }),
+  },
+  "/api/v1/cruise-bookings/{id}": {
+    get: operation({
+      tag: "Cruises",
+      summary: "Cruise booking details",
+      auth: true,
+      parameters: [pathParam("id", "cruise_booking_0001")],
+      schema: ref("CruiseBooking"),
+      errors: [403, 404],
+    }),
+  },
+  "/api/v1/cruise-bookings/{id}/cancel": {
+    post: operation({
+      tag: "Cruises",
+      summary: "Cancel a booking before the sailing departs",
+      auth: true,
+      parameters: [pathParam("id", "cruise_booking_0001")],
+      schema: ref("CruiseBooking"),
+      errors: [403, 404, 409],
+    }),
+  },
   "/api/v1/admin/stats": {
     get: operation({
       tag: "Admin",
@@ -767,7 +945,7 @@ export function openApiDocument() {
         "A demonstration API for QA automation practice. Payments and banking are simulated. Money values are integer cents. Log in with POST /api/v1/auth/login, then use Authorize with the returned token.",
     },
     servers: [{ url: "/", description: "This environment" }],
-    tags: ["System", "Auth", "Products", "Cart", "Orders", "Banking", "Travel", "Bookings", "Admin"].map((name) => ({ name })),
+    tags: ["System", "Auth", "Products", "Cart", "Orders", "Banking", "Travel", "Bookings", "Cruises", "Admin"].map((name) => ({ name })),
     paths,
     components: {
       securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },

@@ -9,7 +9,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 
 export function CheckoutForm() {
   const router = useRouter();
-  const { pending, error, fieldErrors, submit } = useSubmit();
+  const { ready, pending, error, fieldErrors, submit } = useSubmit();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,7 +40,7 @@ export function CheckoutForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-5" data-testid="checkout-form">
+    <form method="post" onSubmit={onSubmit} noValidate className="space-y-5" data-testid="checkout-form">
       {error ? <Alert tone="error" testId="checkout-error">{error}</Alert> : null}
 
       <Card className="space-y-4 p-5">
@@ -68,7 +68,7 @@ export function CheckoutForm() {
         </div>
       </Card>
 
-      <button type="submit" disabled={pending} className={`${buttonStyles.primary} w-full`} data-testid="checkout-submit-button">
+      <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} w-full`} data-testid="checkout-submit-button">
         {pending ? "Placing order..." : "Place order"}
       </button>
     </form>

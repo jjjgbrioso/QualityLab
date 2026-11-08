@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { isValidDateOnly, nightsBetween, todayUtc } from "@/lib/dates";
-import { pageFields, requiredId } from "@/lib/validation/common";
+import { pageFields, requiredId, requiredText } from "@/lib/validation/common";
+
+/** The person the booking is under. Shared by hotel and cruise bookings. */
+export const leadGuestName = requiredText("Lead guest name", 100).pipe(
+  z.string().min(2, "Lead guest name must be at least 2 characters."),
+);
 
 export const MAX_STAY_NIGHTS = 30;
 export const MAX_GUESTS = 10;
@@ -74,6 +79,7 @@ export const bookingCreateSchema = z
     checkIn: date("Check-in"),
     checkOut: date("Check-out"),
     guests: guestCount,
+    leadGuestName,
   })
   .superRefine(checkStay);
 

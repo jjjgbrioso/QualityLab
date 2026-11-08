@@ -7,7 +7,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 
 export function DeactivateProductButton({ productId }: { productId: string }) {
   const router = useRouter();
-  const { pending, error, submit } = useSubmit();
+  const { ready, pending, error, submit } = useSubmit();
 
   const deactivate = () =>
     submit(
@@ -21,7 +21,7 @@ export function DeactivateProductButton({ productId }: { productId: string }) {
   return (
     <div className="space-y-2">
       {error ? <Alert tone="error" testId="product-deactivate-error">{error}</Alert> : null}
-      <button type="button" disabled={pending} onClick={deactivate} className={buttonStyles.danger} data-testid="product-deactivate-button">
+      <button type="button" disabled={!ready || pending} onClick={deactivate} className={buttonStyles.danger} data-testid="product-deactivate-button">
         {pending ? "Deactivating..." : "Deactivate product"}
       </button>
     </div>

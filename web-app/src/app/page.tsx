@@ -17,8 +17,8 @@ const MODULES = [
   {
     href: "/travel",
     id: "travel",
-    title: "Travel",
-    text: "Hotel search, room availability, bookings, cancellation, and date and guest validation.",
+    title: "Travel & Cruise",
+    text: "Cruise and hotel search, cabin and room availability, bookings, cancellation, and guest validation.",
   },
 ];
 

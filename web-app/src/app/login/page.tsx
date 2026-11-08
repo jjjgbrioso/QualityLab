@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/forms/LoginForm";
-import { Card, linkStyles } from "@/components/ui";
+import { Alert, Card, linkStyles } from "@/components/ui";
 import { getSessionUser, safeNextPath } from "@/lib/auth/session";
 import type { SearchParams } from "@/lib/page-helpers";
 
@@ -20,6 +20,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const { next } = await searchParams;
   const nextPath = safeNextPath(typeof next === "string" ? next : undefined);
   if (await getSessionUser()) redirect(nextPath);
+  const redirectedHere = nextPath !== "/";
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
@@ -33,6 +34,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
             Create an account
           </Link>
         </p>
+        {redirectedHere ? (
+          <div className="mb-4">
+            <Alert tone="info" testId="login-required-notice">
+              Please sign in to continue.
+            </Alert>
+          </div>
+        ) : null}
         <LoginForm next={nextPath} />
       </Card>
 

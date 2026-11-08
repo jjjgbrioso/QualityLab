@@ -1,10 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import type { ApiFailure, ApiResult } from "@/lib/client/api";
+
+const noSubscription = () => () => {};
+
+/**
+ * False in the server HTML, true once React is running. Submit buttons stay disabled until then,
+ * so an early click cannot fall back to a plain browser submit that skips validation.
+ */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(noSubscription, () => true, () => false);
+}
 
 /** Tracks the pending and error state of one form. Field errors are keyed by API field path. */
 export function useSubmit() {
+  const ready = useHydrated();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -33,5 +44,5 @@ export function useSubmit() {
     else showFailure(result);
   }
 
-  return { pending, error, fieldErrors, submit, setError, setFieldErrors, reset };
+  return { ready, pending, error, fieldErrors, submit, setError, setFieldErrors, reset };
 }

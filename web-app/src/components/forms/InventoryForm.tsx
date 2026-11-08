@@ -9,7 +9,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 
 export function InventoryForm({ productId, stock }: { productId: string; stock: number }) {
   const router = useRouter();
-  const { pending, error, fieldErrors, submit } = useSubmit();
+  const { ready, pending, error, fieldErrors, submit } = useSubmit();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -35,7 +35,7 @@ export function InventoryForm({ productId, stock }: { productId: string; stock: 
       <p className="mb-3 mt-1 text-sm text-muted">
         Current stock: <span data-testid="inventory-current-stock">{stock}</span>
       </p>
-      <form onSubmit={onSubmit} noValidate className="space-y-4" data-testid="inventory-form">
+      <form method="post" onSubmit={onSubmit} noValidate className="space-y-4" data-testid="inventory-form">
         {error ? <Alert tone="error" testId="inventory-error">{error}</Alert> : null}
         <Field
           label="Quantity change"
@@ -46,7 +46,7 @@ export function InventoryForm({ productId, stock }: { productId: string; stock: 
           error={fieldErrors.delta}
         />
         <Field label="Note (optional)" name="note" autoComplete="off" testId="inventory-note" error={fieldErrors.note} />
-        <button type="submit" disabled={pending} className={buttonStyles.secondary} data-testid="inventory-submit-button">
+        <button type="submit" disabled={!ready || pending} className={buttonStyles.secondary} data-testid="inventory-submit-button">
           {pending ? "Saving..." : "Adjust stock"}
         </button>
       </form>

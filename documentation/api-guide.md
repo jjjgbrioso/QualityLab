@@ -91,6 +91,9 @@ An error:
 | `HOTEL_NOT_FOUND` | 404 | Unknown hotel |
 | `ROOM_NOT_FOUND` | 404 | Unknown room |
 | `BOOKING_NOT_FOUND` | 404 | Unknown booking |
+| `SAILING_NOT_FOUND` | 404 | Unknown sailing |
+| `CABIN_NOT_FOUND` | 404 | Unknown cabin |
+| `CRUISE_BOOKING_NOT_FOUND` | 404 | Unknown cruise booking |
 | `EMAIL_ALREADY_REGISTERED` | 409 | The email is in use |
 | `SKU_ALREADY_EXISTS` | 409 | The SKU is in use |
 | `INSUFFICIENT_STOCK` | 409 | Not enough units in stock |
@@ -101,13 +104,17 @@ An error:
 | `IDEMPOTENCY_KEY_CONFLICT` | 409 | The key was already used with a different request |
 | `ROOM_UNAVAILABLE` | 409 | No room of this type is free for the whole stay |
 | `BOOKING_NOT_CANCELLABLE` | 409 | The stay has started, or the booking is already cancelled |
+| `CABIN_UNAVAILABLE` | 409 | No cabin of this type is left on the sailing |
+| `CRUISE_BOOKING_NOT_CANCELLABLE` | 409 | The sailing has departed, or the booking is already cancelled |
 | `CART_LIMIT_EXCEEDED` | 422 | A cart line can hold at most 99 units |
 | `INSUFFICIENT_FUNDS` | 422 | The account balance is too low |
 | `SAME_ACCOUNT_TRANSFER` | 422 | The source and destination are the same |
 | `ACCOUNT_FROZEN` | 422 | The source or destination account is frozen |
 | `LIMIT_EXCEEDED` | 422 | The amount is over the single-transaction limit |
-| `GUEST_LIMIT_EXCEEDED` | 422 | The room cannot sleep that many guests |
+| `GUEST_LIMIT_EXCEEDED` | 422 | The room or cabin cannot sleep that many guests |
+| `SAILING_DEPARTED` | 422 | Bookings for the sailing have closed |
 | `INVALID_STOCK_ADJUSTMENT` | 422 | The change would make stock negative |
+| `INVALID_LIST_PRICE` | 422 | A product's original price must be higher than its selling price |
 | `INTERNAL_ERROR` | 500 | Unexpected failure |
 | `SERVICE_UNAVAILABLE` | 503 | The database is unreachable, or `JWT_SECRET` is not set correctly |
 
@@ -131,3 +138,27 @@ To avoid the window in automation, vary the amount between tests, or set `DUPLIC
 ## Dates
 
 Dates use `YYYY-MM-DD` and are compared in UTC. A stay covers check-in up to, but not including, check-out, so the check-out day is free for the next guest.
+
+## Sale prices
+
+Products include `listPriceCents` (the original price, or `null`), `onSale`, and `discountPercent`. Checkout always charges `priceCents`. `GET /api/v1/products?onSale=true` lists sale items, and `GET /api/v1/products/flash-sale` returns the six biggest in-stock discounts.
+
+## Cruises
+
+- `GET /api/v1/ships` lists ships.
+- `GET /api/v1/cruises` searches upcoming sailings. Prices are per guest. With `guests` set, sailings that cannot fit the party are left out.
+- `GET /api/v1/cruises/{id}` returns the itinerary and each cabin type's availability, including departed sailings.
+- `POST /api/v1/cruise-bookings` books a cabin with `cabinId`, `guests`, and `leadGuestName`. The total is the price per guest times the guests.
+- `POST /api/v1/cruise-bookings/{id}/cancel` cancels before departure.
+
+Bookings close on the day a sailing departs.
+
+## Photos
+
+Products, hotels, ships, and sailings include `imageUrl`: a path on this site, such as `/images/products/prod_0001.jpg`, or `null` when there is no photo. A sailing's `imageUrl` shows its destination, and `ship.imageUrl` shows the ship.
+
+Admins can set a product's `imageUrl` when creating or updating it. It must be a path starting with a single `/`, or an `https://` address, with no spaces and at most 500 characters. Send `null` to remove the photo. Anything else returns 400 `VALIDATION_ERROR` with the field `imageUrl`.
+
+## Guest information
+
+Hotel and cruise bookings require `leadGuestName`, from 2 to 100 characters. Spaces at either end are removed.

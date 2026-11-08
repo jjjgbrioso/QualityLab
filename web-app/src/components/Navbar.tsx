@@ -13,7 +13,7 @@ export async function Navbar() {
   const primary = [
     { href: "/shop", label: "E-commerce", testId: "nav-link-ecommerce" },
     { href: "/banking", label: "Banking", testId: "nav-link-banking" },
-    { href: "/travel", label: "Travel", testId: "nav-link-travel" },
+    { href: "/travel", label: "Travel & Cruise", testId: "nav-link-travel" },
     { href: "/api-docs", label: "API Docs", testId: "nav-link-api-docs" },
   ];
   const account = user
@@ -22,8 +22,9 @@ export async function Navbar() {
         { href: "/orders", label: "Orders", testId: "nav-link-orders" },
         { href: "/bookings", label: "Bookings", testId: "nav-link-bookings" },
         { href: "/cart", label: `Cart (${cartCount})`, testId: "nav-link-cart" },
+        { href: "/account", label: "Account", testId: "nav-link-account" },
       ]
-    : [{ href: "/login", label: "Login", testId: "nav-link-login" }];
+    : []; // Signing in starts from choosing a module, so there is no Login link.
 
   return (
     <header className="relative border-b border-line bg-surface">
@@ -38,7 +39,7 @@ export async function Navbar() {
               {link.label}
             </Link>
           ))}
-          <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" />
+          {user ? <span className="mx-1 h-5 w-px bg-line" aria-hidden="true" /> : null}
           {account.map((link) => (
             <Link key={link.href} href={link.href} className={LINK_STYLE} data-testid={link.testId}>
               {link.label}

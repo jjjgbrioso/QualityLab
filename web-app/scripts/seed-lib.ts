@@ -1,7 +1,37 @@
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { BANK_ACCOUNTS, BANK_TRANSACTIONS, BOOKINGS, HOTELS, ORDERS, PRODUCTS, USERS } from "./seed-data";
+import {
+  BANK_ACCOUNTS,
+  BANK_TRANSACTIONS,
+  BOOKINGS,
+  CABIN_TYPES,
+  CRUISE_BOOKINGS,
+  HOTELS,
+  hotelImageUrl,
+  ORDERS,
+  PRODUCTS,
+  productImageUrl,
+  SAILINGS,
+  SHIPS,
+  shipImageUrl,
+  USERS,
+} from "./seed-data";
+
+/** Cabin ids follow cabin_<sailing number>_<type suffix>, such as cabin_0001_bal. */
+export function cabinSeeds() {
+  return SAILINGS.flatMap((sailing) =>
+    CABIN_TYPES.map((cabin) => ({
+      id: `cabin_${sailing.id.slice(-4)}_${cabin.suffix}`,
+      sailingId: sailing.id,
+      type: cabin.type,
+      name: cabin.name,
+      pricePerGuestCents: Math.round((sailing.basePriceCents * cabin.priceFactor) / 100) * 100,
+      maxGuests: cabin.maxGuests,
+      quantity: cabin.type === "SUITE" && sailing.suiteQuantity !== undefined ? sailing.suiteQuantity : cabin.quantity,
+    })),
+  );
+}
 
 // A fixed instant keeps generated timestamps identical between runs.
 const BASELINE_DATE = new Date("2026-01-01T00:00:00.000Z");
@@ -10,6 +40,10 @@ const BASELINE_DATE = new Date("2026-01-01T00:00:00.000Z");
 const TABLES = [
   "IdempotencyKey",
   "RevokedToken",
+  "CruiseBooking",
+  "SailingCabin",
+  "Sailing",
+  "Ship",
   "CartItem",
   "InventoryMovement",
   "OrderItem",
@@ -54,7 +88,7 @@ export async function seedDatabase(prisma: PrismaClient) {
   });
 
   await prisma.product.createMany({
-    data: PRODUCTS.map((product) => ({ ...product, createdAt: BASELINE_DATE, updatedAt: BASELINE_DATE })),
+    data: PRODUCTS.map((product) => ({ ...product, imageUrl: productImageUrl(product.id), createdAt: BASELINE_DATE, updatedAt: BASELINE_DATE })),
   });
 
   await prisma.bankAccount.createMany({
@@ -75,6 +109,7 @@ export async function seedDatabase(prisma: PrismaClient) {
       description: hotel.description,
       starRating: hotel.starRating,
       amenities: hotel.amenities,
+      imageUrl: hotelImageUrl(hotel.id),
       createdAt: BASELINE_DATE,
     })),
   });
@@ -142,6 +177,34 @@ export async function seedDatabase(prisma: PrismaClient) {
     }),
   });
 
+  await prisma.ship.createMany({ data: SHIPS.map((ship) => ({ ...ship, amenities: [...ship.amenities], imageUrl: shipImageUrl(ship.id) })) });
+
+  await prisma.sailing.createMany({
+    data: SAILINGS.map((sailing) => ({
+      id: sailing.id,
+      shipId: sailing.shipId,
+      title: sailing.title,
+      destination: sailing.destination,
+      departurePort: sailing.departurePort,
+      ports: sailing.ports,
+      nights: sailing.nights,
+      departureDate: new Date(`${sailing.departureDate}T00:00:00.000Z`),
+    })),
+  });
+
+  const cabins = cabinSeeds();
+  await prisma.sailingCabin.createMany({ data: cabins });
+
+  const cabinPrice = new Map(cabins.map((cabin) => [cabin.id, cabin.pricePerGuestCents]));
+  await prisma.cruiseBooking.createMany({
+    data: CRUISE_BOOKINGS.map((booking) => ({
+      ...booking,
+      totalCents: cabinPrice.get(booking.cabinId)! * booking.guests,
+      createdAt: new Date(booking.createdAt),
+      cancelledAt: booking.cancelledAt ? new Date(booking.cancelledAt) : null,
+    })),
+  });
+
   return {
     users: USERS.length,
     products: PRODUCTS.length,
@@ -150,5 +213,9 @@ export async function seedDatabase(prisma: PrismaClient) {
     rooms: rooms.length,
     orders: ORDERS.length,
     bookings: BOOKINGS.length,
+    ships: SHIPS.length,
+    sailings: SAILINGS.length,
+    cabins: cabins.length,
+    cruiseBookings: CRUISE_BOOKINGS.length,
   };
 }

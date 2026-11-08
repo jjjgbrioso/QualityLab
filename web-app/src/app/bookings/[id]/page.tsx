@@ -48,6 +48,7 @@ export default async function BookingDetailPage({
         <SummaryRow label="Check-out" value={formatDisplayDate(booking.checkOut)} testId="booking-detail-check-out" />
         <SummaryRow label="Nights" value={String(booking.nights)} testId="booking-detail-nights" />
         <SummaryRow label="Guests" value={String(booking.guests)} testId="booking-detail-guests" />
+        <SummaryRow label="Lead guest" value={booking.leadGuestName || "Not recorded"} testId="booking-detail-lead-guest" />
         <div className="mt-2 border-t border-line pt-2">
           <SummaryRow label="Total" value={formatCents(booking.totalCents)} testId="booking-detail-total" strong />
         </div>

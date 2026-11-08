@@ -11,7 +11,7 @@ import type { ProductDto } from "@/lib/services/products";
 
 export function ProductForm({ product }: { product?: ProductDto }) {
   const router = useRouter();
-  const { pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
+  const { ready, pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,6 +24,14 @@ export function ProductForm({ product }: { product?: ProductDto }) {
       return;
     }
 
+    // Blank means "not on sale". Anything else must be a valid amount.
+    const listPriceText = String(form.get("listPrice") ?? "").trim();
+    const listPriceCents = listPriceText === "" ? null : dollarsToCents(listPriceText);
+    if (listPriceText !== "" && listPriceCents === null) {
+      setFieldErrors({ listPriceCents: "Enter an original price such as 24.99, or leave it blank." });
+      return;
+    }
+
     const shared = {
       sku: form.get("sku"),
       name: form.get("name"),
@@ -31,6 +39,9 @@ export function ProductForm({ product }: { product?: ProductDto }) {
       category: form.get("category"),
       brand: form.get("brand"),
       priceCents,
+      listPriceCents,
+      // Blank removes the photo, so the shop shows its placeholder.
+      imageUrl: String(form.get("imageUrl") ?? "").trim() || null,
       isActive: form.get("isActive") === "on",
     };
 
@@ -51,7 +62,7 @@ export function ProductForm({ product }: { product?: ProductDto }) {
 
   return (
     <Card className="p-6">
-      <form onSubmit={onSubmit} noValidate className="space-y-4" data-testid="product-form">
+      <form method="post" onSubmit={onSubmit} noValidate className="space-y-4" data-testid="product-form">
         {error ? <Alert tone="error" testId="product-form-error">{error}</Alert> : null}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="SKU" name="sku" defaultValue={product?.sku} autoComplete="off" testId="product-form-sku" error={fieldErrors.sku} />
@@ -66,6 +77,25 @@ export function ProductForm({ product }: { product?: ProductDto }) {
             autoComplete="off"
             testId="product-form-price"
             error={fieldErrors.priceCents}
+          />
+          <Field
+            label="Original price (USD, optional)"
+            name="listPrice"
+            inputMode="decimal"
+            defaultValue={product?.listPriceCents ? (product.listPriceCents / 100).toFixed(2) : undefined}
+            autoComplete="off"
+            hint="Puts the product on sale. Must be higher than the price. Leave blank for no sale."
+            testId="product-form-list-price"
+            error={fieldErrors.listPriceCents}
+          />
+          <Field
+            label="Image URL (optional)"
+            name="imageUrl"
+            defaultValue={product?.imageUrl ?? undefined}
+            autoComplete="off"
+            hint="A path such as /images/products/prod_0001.jpg, or an https:// address. Leave blank for the placeholder."
+            testId="product-form-image-url"
+            error={fieldErrors.imageUrl}
           />
           {product ? null : (
             <Field label="Opening stock" name="stock" type="number" min={0} defaultValue={0} testId="product-form-stock" error={fieldErrors.stock} />
@@ -90,7 +120,7 @@ export function ProductForm({ product }: { product?: ProductDto }) {
           <input type="checkbox" name="isActive" defaultChecked={product?.isActive ?? true} data-testid="product-form-active-checkbox" />
           Active (visible in the shop)
         </label>
-        <button type="submit" disabled={pending} className={buttonStyles.primary} data-testid="product-form-submit-button">
+        <button type="submit" disabled={!ready || pending} className={buttonStyles.primary} data-testid="product-form-submit-button">
           {pending ? "Saving..." : product ? "Save changes" : "Create product"}
         </button>
       </form>

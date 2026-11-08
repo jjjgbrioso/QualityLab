@@ -10,7 +10,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 export function CancelAction({ endpoint, label, testId }: { endpoint: string; label: string; testId: string }) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
-  const { pending, error, submit } = useSubmit();
+  const { ready, pending, error, submit } = useSubmit();
 
   const confirm = () =>
     submit(
@@ -27,12 +27,12 @@ export function CancelAction({ endpoint, label, testId }: { endpoint: string; la
       {confirming ? (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted">Are you sure?</span>
-          <button type="button" disabled={pending} onClick={confirm} className={buttonStyles.danger} data-testid={`${testId}-confirm`}>
+          <button type="button" disabled={!ready || pending} onClick={confirm} className={buttonStyles.danger} data-testid={`${testId}-confirm`}>
             {pending ? "Cancelling..." : "Yes, cancel"}
           </button>
           <button
             type="button"
-            disabled={pending}
+            disabled={!ready || pending}
             onClick={() => setConfirming(false)}
             className={buttonStyles.secondary}
             data-testid={`${testId}-dismiss`}

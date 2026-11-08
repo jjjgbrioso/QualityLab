@@ -9,7 +9,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
-  const { pending, error, fieldErrors, submit } = useSubmit();
+  const { ready, pending, error, fieldErrors, submit } = useSubmit();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +28,7 @@ export function LoginForm({ next }: { next: string }) {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-4" data-testid="login-form">
+    <form method="post" onSubmit={onSubmit} noValidate className="space-y-4" data-testid="login-form">
       {error ? <Alert tone="error" testId="login-error">{error}</Alert> : null}
       <Field
         label="Email"
@@ -46,7 +46,7 @@ export function LoginForm({ next }: { next: string }) {
         testId="login-password"
         error={fieldErrors.password}
       />
-      <button type="submit" disabled={pending} className={`${buttonStyles.primary} w-full`} data-testid="login-submit-button">
+      <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} w-full`} data-testid="login-submit-button">
         {pending ? "Signing in..." : "Sign in"}
       </button>
     </form>

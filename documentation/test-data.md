@@ -61,6 +61,28 @@ There are 30 products: 29 active and 1 inactive, in six categories (Apparel, Boo
 
 Sort options are `name_asc`, `name_desc`, `price_asc`, `price_desc`, `rating_desc`, and `newest`.
 
+### Photos
+
+Products `prod_0001` to `prod_0029` have a photo at `/images/products/<id>.jpg`. `prod_0030` has none, so its `imageUrl` is `null`. It is hidden from the shop, so to see the drawn placeholder in the store, clear an active product's image URL as an admin. Every hotel has a photo at `/images/hotels/<id>.jpg`, and every ship at `/images/ships/<id>.jpg`. Sailings return the photo for their destination, such as `/images/destinations/japan-korea.jpg`. The source of every photo is listed in [Image credits](image-credits.md).
+
+### Sale prices
+
+Nine products have an original price (`listPriceCents`). The discount is rounded to a whole percent. Checkout always charges the selling price.
+
+| Id | Name | Price | Was | Discount |
+| --- | --- | --- | --- | --- |
+| `prod_0009` | Willow Knit Throw | $69.99 | $99.99 | 30% |
+| `prod_0002` | Pulse Bluetooth Speaker | $59.99 | $79.99 | 25% |
+| `prod_0024` | Drift Rain Jacket | $89.99 | $119.99 | 25% |
+| `prod_0027` | Grid Dot Notebook | $14.99 | $19.99 | 25% |
+| `prod_0018` | Summit Trail Backpack | $79.99 | $99.99 | 20% |
+| `prod_0019` | Tempo Jump Rope | $15.99 | $19.99 | 20% |
+| `prod_0001` | Aurora Wireless Headphones | $129.99 | $159.99 | 19% |
+| `prod_0003` | Vector Mechanical Keyboard | $89.99 | $109.99 | 18% |
+| `prod_0006` | Horizon 27-inch Monitor | $299.99 | $349.99 | 14%, but out of stock |
+
+The flash sale shows the six biggest in-stock discounts, in this order: `prod_0009`, `prod_0024`, `prod_0027`, `prod_0002`, `prod_0018`, `prod_0019`. Equal discounts are ordered by name.
+
 ## Orders
 
 | Id | Number | Owner | Status | Total | Use it for |
@@ -95,3 +117,59 @@ Amenities are Breakfast, Gym, Parking, Pet friendly, Pool, Spa, and Wi-Fi.
 | `booking_0004` | `BKG-SEED0004` | Bob | `room_0012_std` | 2030-06-10 to 2030-06-15 | CONFIRMED | Sells out that room for those dates |
 
 Stays are half-open: the check-out day is free for the next guest, so `room_0012_std` can be booked from 2030-06-15.
+
+Seeded bookings record their owner as the lead guest: "Alice Tester" or "Bob Tester". New bookings require a lead guest name of 2 to 100 characters.
+
+## Ships and sailings
+
+All ships and sailings are fictional. Ports are real places, used only as destinations.
+
+| Ship | Id | Launched | Guests |
+| --- | --- | --- | --- |
+| Azure Horizon | `ship_0001` | 2024 | 4,200 |
+| Coral Voyager | `ship_0002` | 2019 | 3,100 |
+| Northern Star | `ship_0003` | 2016 | 2,400 |
+| Island Breeze | `ship_0004` | 2022 | 1,800 |
+
+| Id | Sailing | Ship | Departs | Nights | From, per guest |
+| --- | --- | --- | --- | --- | --- |
+| `sailing_0001` | 4-Night Philippine Islands Getaway | Azure Horizon | Manila, 2030-03-01 | 4 | $399.00 |
+| `sailing_0002` | 7-Night Southeast Asia Explorer | Azure Horizon | Singapore, 2030-04-12 | 7 | $699.00 |
+| `sailing_0003` | 5-Night Hong Kong & Taiwan | Coral Voyager | Hong Kong, 2030-05-20 | 5 | $549.00 |
+| `sailing_0004` | 3-Night Weekend Escape | Coral Voyager | Manila, 2030-06-07 | 3 | $299.00 |
+| `sailing_0005` | 8-Night Japan & Korea | Northern Star | Yokohama, 2030-09-03 | 8 | $999.00 |
+| `sailing_0006` | 6-Night Southeast Asia Highlights | Northern Star | Singapore, 2030-11-15 | 6 | $749.00 |
+| `sailing_0007` | 4-Night Visayas Island Hopper | Island Breeze | Cebu, 2030-12-18 | 4 | $429.00 |
+| `sailing_0008` | 5-Night New Year Celebration | Azure Horizon | Manila, 2030-12-28 | 5 | $599.00 |
+| `sailing_0009` | 4-Night Palawan Discovery | Coral Voyager | Manila, 2024-08-10 | 4 | Departed |
+| `sailing_0010` | 10-Night Grand East Asia | Northern Star | Hong Kong, 2031-02-10 | 10 | $1,299.00 |
+
+Search shows upcoming sailings only, so `sailing_0009` appears only by its id. It cannot be booked.
+
+### Cabins
+
+Every sailing has four cabin types. Cabin ids follow `cabin_<sailing number>_<int|ocv|bal|ste>`, such as `cabin_0001_bal`. Prices are per guest, rounded to whole dollars.
+
+| Cabin type | Sleeps | Price per guest | Cabins |
+| --- | --- | --- | --- |
+| Interior (`int`) | 2 | Sailing's base price | 6 |
+| Ocean View (`ocv`) | 3 | 1.3 × base | 4 |
+| Balcony (`bal`) | 4 | 1.7 × base | 3 |
+| Suite (`ste`) | 4 | 3 × base | 2, or 1 on `sailing_0007` |
+
+The single suite on `sailing_0007` (`cabin_0007_ste`) is booked by Bob, so it is sold out. Use it for sold-out tests.
+
+### Cruise bookings
+
+| Id | Number | Owner | Cabin | Guests | Status | Use it for |
+| --- | --- | --- | --- | --- | --- | --- |
+| `cruise_booking_0001` | `CRZ-SEED0001` | Alice | `cabin_0001_bal` | 2 | CONFIRMED | Can be cancelled |
+| `cruise_booking_0002` | `CRZ-SEED0002` | Alice | `cabin_0009_int` | 2 | CONFIRMED | Departed, cannot be cancelled |
+| `cruise_booking_0003` | `CRZ-SEED0003` | Alice | `cabin_0003_ocv` | 3 | CANCELLED | Already cancelled |
+| `cruise_booking_0004` | `CRZ-SEED0004` | Bob | `cabin_0007_ste` | 2 | CONFIRMED | Sells out that suite |
+
+The total is the cabin's price per guest times the number of guests.
+
+## Admin dashboard baseline
+
+5 users, 29 active products, 5 orders, 3 confirmed hotel bookings, 3 confirmed cruise bookings, 5 bank accounts, and $340.74 simulated revenue.

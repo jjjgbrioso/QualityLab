@@ -28,9 +28,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <footer className="border-t border-line bg-surface">
-          <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-4 text-xs text-muted sm:flex-row sm:justify-between sm:px-6">
-            <span data-testid="footer-note">QualityLab is a QA demonstration project. All data is fictional.</span>
-            <span className="flex gap-4">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-xs text-muted sm:flex-row sm:items-start sm:justify-between sm:px-6">
+            <div className="max-w-3xl space-y-1">
+              <p data-testid="footer-note">QualityLab is a QA demonstration project. All data is fictional.</p>
+              <p data-testid="footer-disclaimer">
+                QualityLab is an independent educational and QA automation demonstration project. It is not affiliated
+                with, endorsed by, or associated with any company or brand.
+              </p>
+            </div>
+            <span className="flex shrink-0 gap-4">
               <Link href="/api-docs" className="hover:underline" data-testid="footer-link-api-docs">
                 API Docs
               </Link>

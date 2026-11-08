@@ -7,11 +7,12 @@ import { toProductDto } from "@/lib/services/products";
 export const LOW_STOCK_THRESHOLD = 5;
 
 export async function adminStats() {
-  const [users, products, orders, bookings, bankAccounts, revenue, lowStock, recentOrders] = await Promise.all([
+  const [users, products, orders, bookings, cruiseBookings, bankAccounts, revenue, lowStock, recentOrders] = await Promise.all([
     prisma.user.count(),
     prisma.product.count({ where: { isActive: true } }),
     prisma.order.count(),
     prisma.booking.count({ where: { status: "CONFIRMED" } }),
+    prisma.cruiseBooking.count({ where: { status: "CONFIRMED" } }),
     prisma.bankAccount.count(),
     prisma.order.aggregate({ where: { status: { not: "CANCELLED" } }, _sum: { totalCents: true } }),
     prisma.product.findMany({
@@ -26,7 +27,7 @@ export async function adminStats() {
   ]);
 
   return {
-    counts: { users, products, orders, confirmedBookings: bookings, bankAccounts },
+    counts: { users, products, orders, confirmedBookings: bookings, confirmedCruiseBookings: cruiseBookings, bankAccounts },
     revenueCents: revenue._sum.totalCents ?? 0,
     lowStockProducts: lowStock.map(toProductDto),
     recentOrders: recentOrders.map(toOrderDto),

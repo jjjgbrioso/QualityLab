@@ -17,6 +17,10 @@ export const productQuerySchema = z
       .enum(["true", "false"], { error: "In stock must be true or false." })
       .transform((value) => value === "true")
       .optional(),
+    onSale: z
+      .enum(["true", "false"], { error: "On sale must be true or false." })
+      .transform((value) => value === "true")
+      .optional(),
     sort: z.enum(PRODUCT_SORTS, { error: "Choose a supported sort order." }).default("name_asc"),
     ...pageFields,
   })
@@ -39,14 +43,34 @@ const productFields = {
     .int("Price must be a whole number of cents.")
     .positive("Price must be greater than zero.")
     .max(10_000_000, "Price must be at most $100,000.00."),
+  // Null removes a sale. It must be higher than the price, which the service checks.
+  listPriceCents: z
+    .number({ error: "Original price must be a number of cents." })
+    .int("Original price must be a whole number of cents.")
+    .positive("Original price must be greater than zero.")
+    .max(10_000_000, "Original price must be at most $100,000.00.")
+    .nullable(),
   stock: z
     .number({ error: "Stock is required." })
     .int("Stock must be a whole number.")
     .min(0, "Stock cannot be negative.")
     .max(100_000, "Stock must be at most 100,000."),
+  // A path under public/, such as /images/products/prod_0001.jpg, or an https address.
+  // Null removes the photo, and the store shows its illustrated placeholder instead.
+  imageUrl: z
+    .string({ error: "Image URL must be text." })
+    .trim()
+    .max(500, "Image URL must be at most 500 characters.")
+    .regex(/^(\/(?!\/)\S*|https:\/\/\S+)$/, "Image URL must be a path starting with / or an https:// address.")
+    .nullable(),
 };
 
-export const productCreateSchema = z.object({ ...productFields, isActive: z.boolean().default(true) });
+export const productCreateSchema = z.object({
+  ...productFields,
+  listPriceCents: productFields.listPriceCents.optional(),
+  imageUrl: productFields.imageUrl.optional(),
+  isActive: z.boolean().default(true),
+});
 
 // Built without defaults so a partial update cannot reset a field the caller left out.
 export const productUpdateSchema = z

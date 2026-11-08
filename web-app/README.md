@@ -2,6 +2,8 @@
 
 The Next.js application, REST API, database schema, seed data, and tests for QualityLab.
 
+QualityLab is an independent educational and QA automation demonstration project. It is not affiliated with, endorsed by, or associated with any company or brand.
+
 ## Requirements
 
 - Node.js 24
@@ -86,6 +88,7 @@ The test suite covers business rules. It is separate from the planned Selenium, 
 
 ```
 prisma/               Schema and migrations
+public/images/        Product, hotel, ship, and destination photos
 scripts/              Local database, seed, and reset scripts
 src/app/              Pages
 src/app/api/v1/       REST API route handlers

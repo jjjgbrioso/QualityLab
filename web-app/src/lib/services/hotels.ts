@@ -78,6 +78,7 @@ function toHotelSummary(hotel: Hotel) {
     description: hotel.description,
     starRating: hotel.starRating,
     amenities: hotel.amenities,
+    imageUrl: hotel.imageUrl,
   };
 }
 
@@ -163,4 +164,21 @@ export async function getRoom(id: string, query: StayQuery = {}) {
   const stay = stayFrom(query);
   const dto = toRoomDto(room, stay ? await roomsLeft(prisma, room, stay) : null, stay);
   return { ...dto, hotel: toHotelSummary(room.hotel) };
+}
+
+/** Cities with hotels, for destination cards. */
+export async function listHotelCities() {
+  const hotels = await prisma.hotel.findMany({ include: { rooms: { select: { pricePerNightCents: true } } } });
+  const byCity = new Map<string, { city: string; country: string; hotels: number; fromPriceCents: number }>();
+  for (const hotel of hotels) {
+    const from = Math.min(...hotel.rooms.map((room) => room.pricePerNightCents));
+    const entry = byCity.get(hotel.city);
+    if (entry) {
+      entry.hotels += 1;
+      entry.fromPriceCents = Math.min(entry.fromPriceCents, from);
+    } else {
+      byCity.set(hotel.city, { city: hotel.city, country: hotel.country, hotels: 1, fromPriceCents: from });
+    }
+  }
+  return [...byCity.values()].sort((a, b) => a.city.localeCompare(b.city));
 }

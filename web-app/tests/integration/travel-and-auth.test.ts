@@ -49,7 +49,7 @@ describeWithDatabase("hotels", () => {
 });
 
 describeWithDatabase("bookings", () => {
-  const stay = { roomId: STANDARD, checkIn: "2030-02-01", checkOut: "2030-02-04", guests: 2 };
+  const stay = { roomId: STANDARD, checkIn: "2030-02-01", checkOut: "2030-02-04", guests: 2, leadGuestName: "Alice Tester" };
 
   it("creates a booking with the right total", async () => {
     await expect(createBooking(alice.id, stay)).resolves.toMatchObject({ status: "CONFIRMED", nights: 3, totalCents: 36_000, canCancel: true });
@@ -155,7 +155,7 @@ describeWithDatabase("authentication", () => {
 
   it("reports the expected baseline to the admin dashboard", async () => {
     const stats = await adminStats();
-    expect(stats.counts).toEqual({ users: 5, products: 29, orders: 5, confirmedBookings: 3, bankAccounts: 5 });
+    expect(stats.counts).toEqual({ users: 5, products: 29, orders: 5, confirmedBookings: 3, confirmedCruiseBookings: 3, bankAccounts: 5 });
     expect(stats.lowStockProducts.map((product) => product.id)).toEqual(["prod_0006", "prod_0021", "prod_0010", "prod_0017", "prod_0004"]);
     expect(stats.revenueCents).toBe(34_074);
   });

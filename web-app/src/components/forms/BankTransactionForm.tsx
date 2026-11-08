@@ -19,7 +19,7 @@ const SETTINGS: Record<Kind, { endpoint: string; action: string; testId: string 
 
 export function BankTransactionForm({ kind, accounts }: { kind: Kind; accounts: AccountDto[] }) {
   const router = useRouter();
-  const { pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
+  const { ready, pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
   const [result, setResult] = useState<TransactionDto | null>(null);
   // Kept across a failed attempt so a retry cannot post twice. Replaced after each success.
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
@@ -66,7 +66,7 @@ export function BankTransactionForm({ kind, accounts }: { kind: Kind; accounts: 
 
   return (
     <Card className="max-w-lg p-6">
-      <form onSubmit={onSubmit} noValidate className="space-y-4" data-testid={`${testId}-form`}>
+      <form method="post" onSubmit={onSubmit} noValidate className="space-y-4" data-testid={`${testId}-form`}>
         {error ? <Alert tone="error" testId={`${testId}-error`}>{error}</Alert> : null}
         {result ? (
           <Alert tone="success" testId={`${testId}-success`}>
@@ -116,7 +116,7 @@ export function BankTransactionForm({ kind, accounts }: { kind: Kind; accounts: 
           testId={`${testId}-description`}
           error={fieldErrors.description}
         />
-        <button type="submit" disabled={pending} className={`${buttonStyles.primary} w-full`} data-testid={`${testId}-submit-button`}>
+        <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} w-full`} data-testid={`${testId}-submit-button`}>
           {pending ? "Processing..." : action}
         </button>
       </form>

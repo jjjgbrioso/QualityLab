@@ -10,7 +10,7 @@ import type { CartDto } from "@/lib/services/cart";
 
 export function CartLines({ items }: { items: CartDto["items"] }) {
   const router = useRouter();
-  const { pending, error, submit } = useSubmit();
+  const { ready, pending, error, submit } = useSubmit();
 
   const changeQuantity = (productId: string, quantity: number) =>
     submit(
@@ -46,7 +46,7 @@ export function CartLines({ items }: { items: CartDto["items"] }) {
               min={1}
               max={item.availableStock}
               defaultValue={item.quantity}
-              disabled={pending}
+              disabled={!ready || pending}
               className={inputStyles}
               data-testid={`cart-item-quantity-${item.productId}`}
               onBlur={(event) => {
@@ -60,7 +60,7 @@ export function CartLines({ items }: { items: CartDto["items"] }) {
           </p>
           <button
             type="button"
-            disabled={pending}
+            disabled={!ready || pending}
             onClick={() => remove(item.productId)}
             className={buttonStyles.secondary}
             aria-label={`Remove ${item.name}`}

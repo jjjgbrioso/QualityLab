@@ -111,7 +111,7 @@ describe("dates", () => {
 });
 
 describe("booking dates and guests", () => {
-  const stay = { roomId: "r", checkIn: "2030-03-10", checkOut: "2030-03-12", guests: 2 };
+  const stay = { roomId: "r", checkIn: "2030-03-10", checkOut: "2030-03-12", guests: 2, leadGuestName: "Alice Tester" };
 
   it("accepts a future stay", () => {
     expect(bookingCreateSchema.safeParse(stay).success).toBe(true);

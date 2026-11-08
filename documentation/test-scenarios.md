@@ -19,9 +19,11 @@ Priority: P1 is critical, P2 is important, and P3 is useful coverage.
 | AUTH-09 | Positive | P1 | Log out, then reuse the same token | Logout 200, then 401 |
 | AUTH-10 | Positive | P2 | Log out in one session | Another session for the same user keeps working |
 | AUTH-11 | Negative | P1 | Call a protected endpoint with no token or a bad token | 401 `UNAUTHORIZED` |
-| AUTH-12 | Negative | P1 | Open `/banking` while signed out | Redirect to `/login?next=/banking`, then back after login |
+| AUTH-12 | Negative | P1 | Choose E-commerce, Banking, or Travel while signed out | Redirect to `/login?next=...` with a sign-in notice, then back to that module after login |
 | AUTH-13 | Negative | P1 | Open `/admin` as a customer | `/forbidden` page |
 | AUTH-14 | Negative | P1 | Open `/login?next=https://example.com`, then log in | User stays on this site |
+| AUTH-15 | Positive | P2 | Open `/shop?category=Books` while signed out, then log in | Returns to the shop with the Books filter still applied |
+| AUTH-16 | Positive | P3 | Open the home page, API docs, login, and registration while signed out | All load without a login |
 
 ## E-commerce
 
@@ -37,6 +39,16 @@ Priority: P1 is critical, P2 is important, and P3 is useful coverage.
 | SHOP-08 | Negative | P3 | Use an unknown sort, or `pageSize=101` | 400 `VALIDATION_ERROR` |
 | SHOP-09 | Negative | P2 | Open inactive `prod_0030` | 404 page, API 404 `PRODUCT_NOT_FOUND` |
 | SHOP-10 | Negative | P2 | Open out-of-stock `prod_0006` | Notice is shown and there is no add-to-cart button |
+| SHOP-11 | Positive | P2 | Open `/shop` with no filters | Promo banners, a flash sale of 6 items, and 6 category tiles |
+| SHOP-12 | Positive | P2 | Filter `onSale=true` | 9 products, each with a discount badge and crossed-out price |
+| SHOP-13 | Positive | P2 | Open `prod_0009` | $69.99, was $99.99, -30%, "You save $30.00" |
+| SHOP-14 | Positive | P1 | Buy now on a product | Item is added and checkout opens |
+| SHOP-15 | Positive | P3 | Choose a category tile | Shop filtered to that category |
+| SHOP-16 | Negative | P2 | Admin sets an original price at or below the price | 422 `INVALID_LIST_PRICE` |
+| SHOP-17 | Positive | P3 | Admin clears the original price | Product is no longer on sale |
+| SHOP-18 | Positive | P2 | Open `/shop` and `prod_0001` | Every product card and the product page show a loaded photo |
+| SHOP-19 | Positive | P3 | Admin sets a product's image URL, then clears it | The new photo shows, then the drawn placeholder |
+| SHOP-20 | Negative | P2 | Admin sets the image URL to `http://...`, `//host/a.jpg`, or `javascript:...` | 400 `VALIDATION_ERROR` on `imageUrl` |
 
 ## Cart and checkout
 
@@ -95,6 +107,8 @@ Money endpoints need an `Idempotency-Key` header. The UI sends one automatically
 
 ## Travel
 
+Hotel search is at `/travel/hotels`. Old `/travel?destination=...` links redirect there.
+
 | ID | Type | Priority | Scenario | Expected result |
 | --- | --- | --- | --- | --- |
 | TRV-01 | Positive | P1 | List hotels | 12 hotels |
@@ -120,12 +134,43 @@ Money endpoints need an `Idempotency-Key` header. The UI sends one automatically
 | BKG-07 | Positive | P1 | Cancel `booking_0001` | CANCELLED, and the dates become available |
 | BKG-08 | Negative | P1 | Cancel past `booking_0002` or cancelled `booking_0003` | 409 `BOOKING_NOT_CANCELLABLE` |
 | BKG-09 | Negative | P1 | Bob opens Alice's booking | 403 `FORBIDDEN` |
+| BKG-10 | Negative | P1 | Book without a lead guest name, or with one letter | 400 `VALIDATION_ERROR` on `leadGuestName` |
+| BKG-11 | Positive | P2 | Book with a lead guest name | The name shows on the booking details |
+
+## Cruises
+
+| ID | Type | Priority | Scenario | Expected result |
+| --- | --- | --- | --- | --- |
+| CRZ-01 | Positive | P1 | List cruises | 9 upcoming sailings, soonest first. `sailing_0009` is not listed |
+| CRZ-02 | Positive | P2 | Filter by destination `Philippine Islands` | 4 sailings |
+| CRZ-03 | Positive | P2 | Filter by port `Manila`, or month `2030-12` | 3 sailings, or `sailing_0007` and `sailing_0008` |
+| CRZ-04 | Positive | P2 | Sort by `price_asc` | `sailing_0004` first, from $299.00 |
+| CRZ-05 | Negative | P2 | Search with 5 guests | No results, since cabins sleep up to 4 |
+| CRZ-06 | Negative | P2 | Use month `2030-13`, or a reversed nights range | 400 `VALIDATION_ERROR` |
+| CRZ-07 | Positive | P1 | Open `sailing_0007` | Four cabin types, with the suite sold out |
+| CRZ-08 | Positive | P1 | Book a Balcony for 3 guests | 201. Total is 3 × price per guest, and that cabin type has one fewer left |
+| CRZ-09 | Negative | P1 | Book `cabin_0007_ste` | 409 `CABIN_UNAVAILABLE` |
+| CRZ-10 | Negative | P1 | Book an Interior cabin for 3 guests | 422 `GUEST_LIMIT_EXCEEDED` |
+| CRZ-11 | Negative | P1 | Book a cabin on departed `sailing_0009` | 422 `SAILING_DEPARTED`. The page shows a notice and no booking form |
+| CRZ-12 | Negative | P2 | Book an unknown cabin | 404 `CABIN_NOT_FOUND` |
+| CRZ-13 | Negative | P1 | Book the last cabins of a type in parallel | Only as many succeed as there are cabins. The rest get 409 |
+| CRZ-14 | Positive | P1 | Cancel `cruise_booking_0001` | CANCELLED, and the cabin becomes available |
+| CRZ-15 | Negative | P1 | Cancel departed `cruise_booking_0002` or cancelled `cruise_booking_0003` | 409 `CRUISE_BOOKING_NOT_CANCELLABLE` |
+| CRZ-16 | Negative | P1 | Bob opens Alice's cruise booking | 403 `FORBIDDEN` |
+| CRZ-17 | Positive | P2 | Open booking history and choose the Cruises tab | Alice's 3 cruise bookings |
+
+## Account
+
+| ID | Type | Priority | Scenario | Expected result |
+| --- | --- | --- | --- | --- |
+| ACC-01 | Positive | P2 | Open `/account` as Alice | Name, email, and role, plus 4 orders, 1 upcoming hotel stay, 1 upcoming cruise, and 2 bank accounts. Past and cancelled bookings are not counted |
+| ACC-02 | Negative | P2 | Open `/account` while signed out | Redirect to login, then back to the account page |
 
 ## Admin
 
 | ID | Type | Priority | Scenario | Expected result |
 | --- | --- | --- | --- | --- |
-| ADM-01 | Positive | P1 | View the dashboard | Baseline: 5 users, 29 products, 5 orders, $340.74 revenue |
+| ADM-01 | Positive | P1 | View the dashboard | Baseline: 5 users, 29 products, 5 orders, $340.74 revenue. The API also reports 3 confirmed cruise bookings |
 | ADM-02 | Negative | P1 | Call admin endpoints as a customer | 403 `FORBIDDEN` |
 | ADM-03 | Negative | P1 | Call admin endpoints with no token | 401 `UNAUTHORIZED` |
 | ADM-04 | Positive | P1 | Create a product | 201, and it appears in the shop |
@@ -157,3 +202,7 @@ Money endpoints need an `Idempotency-Key` header. The UI sends one automatically
 | UI-02 | Positive | P2 | Submit an invalid form | Errors are linked by `aria-describedby`, and the alert uses `role="alert"` |
 | UI-03 | Positive | P2 | Complete checkout using only the keyboard | Tab order follows the form |
 | UI-04 | Positive | P2 | View pages at phone width | No horizontal page scroll, and the Menu button works |
+| UI-05 | Positive | P2 | Inspect a form's HTML before the page is interactive | Submit buttons are disabled, and forms use POST |
+| UI-06 | Positive | P3 | Open a module page on a slow connection | A loading placeholder with `data-testid="page-loading"` shows first |
+| UI-07 | Positive | P3 | Read the footer on any page | It shows the independence disclaimer |
+| UI-08 | Positive | P3 | Check every image on a page after scrolling | No broken images. Product page photos have the product name as alt text |

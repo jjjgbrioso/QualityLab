@@ -32,7 +32,7 @@ Environment files are git-ignored. Only the `.example` templates are committed, 
 The Vercel project is linked to GitHub, so every push to `main` deploys to STAGING. After a push, confirm the site as an anonymous visitor:
 
 1. `/api/v1/health` returns 200, with `environment` set to `staging` and database status `up`.
-2. `/shop` lists products.
+2. `/shop` redirects to the login page, and lists products after you sign in.
 
 Check the health endpoint rather than the build status. A build can succeed, and static pages can load, while the database connection is broken.
 
@@ -61,6 +61,8 @@ $env:QL_ENV = "staging"
 npm run db:seed
 Remove-Item Env:QL_ENV
 ```
+
+`db:seed` refuses a database that already has data. When the baseline itself changes, as it did when cruises and sale prices were added, apply the migrations and then [reset STAGING](#resetting-staging) to load the new baseline. A reset deletes everything on that database, including anything visitors created.
 
 ## Setting up a new environment
 

@@ -6,7 +6,7 @@ How to automate against QualityLab from Selenium, Playwright, API tools, and JMe
 
 | Environment | Base URL | Use it for |
 | --- | --- | --- |
-| LOCAL | `http://localhost:3000` | Day-to-day test runs, and anything that resets data |
+| LOCAL | `http://localhost:3000`, or the port you start it on | Day-to-day test runs, and anything that resets data |
 | STAGING | `https://quality-lab-teal.vercel.app` | Checks against the deployed application |
 
 STAGING data is public and shared, so anyone can change it. Tests there should create their own data rather than rely on exact baseline values. Run load tests against LOCAL, or check the [hosted database limits](deployment.md#known-limits-of-the-public-demo) first.
@@ -50,16 +50,36 @@ Other shared patterns:
 | --- | --- |
 | `<page>-title` | The page heading, such as `shop-title` |
 | `<name>-pagination-previous`, `-next`, `-status` | Pagination controls |
-| `order-cancel-button`, `-confirm`, `-dismiss`, `-error` | Two-step cancel, also used by `booking-cancel` |
+| `order-cancel-button`, `-confirm`, `-dismiss`, `-error` | Two-step cancel, also used by `booking-cancel` and `cruise-booking-cancel` |
+| `cabin-option-<type>`, `cabin-radio-<type>`, `cabin-price-<type>`, `cabin-left-<type>`, `cabin-sold-out-<type>` | Cruise cabins. `<type>` is `interior`, `ocean-view`, `balcony`, or `suite` |
+| `category-tile-<category>`, `destination-card-<city>`, `ship-card-<ship id>` | Marketplace and travel cards, such as `category-tile-books` and `destination-card-lisbon` |
 | `transfer-form`, `-account-select`, `-amount-input`, `-submit-button`, `-success`, `-error`, `-reference`, `-new-balance` | Bank forms, also used by `deposit-` and `withdrawal-` |
 | `mobile-<nav id>` | The same link in the mobile menu, such as `mobile-nav-link-ecommerce` |
 
+## Main pages
+
+| Page | Path |
+| --- | --- |
+| Marketplace and search results | `/shop`, `/shop?q=...&category=...&onSale=true` |
+| Product | `/shop/<product id>` |
+| Travel & Cruise home | `/travel`, with the hotel search tab at `/travel?tab=hotels` |
+| Cruise search and sailing | `/travel/cruises`, `/travel/cruises/<sailing id>` |
+| Hotel search, hotel, and room | `/travel/hotels`, `/travel/hotels/<hotel id>`, `/travel/rooms/<room id>` |
+| Booking history | `/bookings` for hotels, `/bookings?type=cruises` for cruises |
+| Booking details | `/bookings/<booking id>`, `/bookings/cruises/<cruise booking id>` |
+| Account | `/account` |
+
 ## Behaviour to plan for
 
+- **Wait for enabled buttons:** every submit button is disabled in the page's HTML and becomes enabled once the page is interactive. Playwright waits for this automatically. In Selenium, wait for the button to be clickable before clicking. This stops an early click from bypassing validation.
+- **Loading placeholders:** module pages show `data-testid="page-loading"` while they load. Wait for it to disappear, or for the page title id.
+- **Sort selects** on the shop and cruise search submit as soon as they change.
 - **Cart quantity** saves when the field loses focus, so tab out of it after typing.
+- **Sign-in first:** there is no Login link in the navigation. Every E-commerce, Banking, and Travel page requires a login. A signed-out visit goes to `/login?next=...` and returns to the same page, filters included, after login. The home page, API docs, login, and registration are public.
 - **Filters** are plain GET forms, so you can open a filtered page directly with a URL.
 - **Cancel** uses an inline confirmation, not a native browser dialog.
 - **Simulated dates** in the seed data are fixed in 2030 and 2024, so scenarios do not expire.
+- **Photos** are ordinary `<img>` elements inside a box with a `-image` test id, such as `product-image-prod_0001`. A record without a photo shows a drawn placeholder with a `-image-placeholder` id instead, such as `product-image-placeholder-prod_0002` after an admin clears that product's image URL. Photos below the fold load lazily, so scroll to them before checking that they loaded.
 - **Repeated amounts:** an identical bank transaction within 30 seconds is rejected. See the [API guide](api-guide.md#duplicate-transaction-prevention).
 
 ## Using the API for test setup
@@ -73,7 +93,7 @@ POST /api/v1/cart/items   adds an item with the Bearer token
 
 ## Test id reference
 
-Generated from the source. `<id>` stands for a record id. Entries without a suffix are either complete ids or form field base names.
+Generated from the source. `<id>` stands for a record id, and `<type>` for a cabin type. Entries without a suffix are complete ids or form field base names.
 
 ### Navigation and layout
 
@@ -81,6 +101,7 @@ Generated from the source. `<id>` stands for a record id. Entries without a suff
 demo-banner
 error-page
 error-retry-button
+footer-disclaimer
 footer-link-api-docs
 footer-link-health
 footer-note
@@ -101,6 +122,7 @@ nav-main
 nav-user-name
 not-found-home-link
 not-found-page
+page-loading
 ```
 
 ### Authentication
@@ -111,6 +133,7 @@ login-error
 login-form
 login-password
 login-register-link
+login-required-notice
 login-submit-button
 login-title
 register-confirm-password
@@ -127,43 +150,92 @@ test-account-<id>
 test-accounts-panel
 ```
 
-### E-commerce
+### Account
+
+```text
+account
+account-back-link
+account-balance
+account-balance-<id>
+account-card-<id>
+account-email
+account-list
+account-name
+account-number-<id>
+account-profile
+account-role
+account-status
+account-status-<id>
+```
+
+### Marketplace
 
 ```text
 add-to-cart-button
 add-to-cart-error
 add-to-cart-form
 add-to-cart-success
+buy-now-button
+category-tile-<id>
+category-tiles
+flash-sale-discount-<id>
+flash-sale-image-<id>
+flash-sale-item-<id>
+flash-sale-list-price-<id>
+flash-sale-price-<id>
+flash-sale-strip
+flash-sale-view-all
 product-back-link
+product-breadcrumb
+product-breadcrumb-category
 product-card-<id>
 product-category-select
-product-detail
 product-detail-description
+product-detail-discount
+product-detail-image
+product-detail-image-placeholder
+product-detail-list-price
 product-detail-name
 product-detail-out-of-stock
 product-detail-price
 product-detail-rating
+product-detail-saving
+product-detail-seller
 product-detail-sku
 product-detail-stock
+product-discount-<id>
 product-empty-state
 product-filter-clear
 product-filter-error
 product-filter-form
 product-filter-submit
+product-filters
 product-grid
+product-image-<id>
+product-image-placeholder-<id>
 product-in-stock-checkbox
-product-login-to-buy
+product-list-price-<id>
 product-max-price-input
 product-min-price-input
 product-name-<id>
+product-on-sale-checkbox
 product-out-of-stock-<id>
 product-pagination
 product-price-<id>
 product-quantity
 product-result-count
+product-results-heading
+product-sale-badge-<id>
+product-search-button
 product-search-input
 product-sort-select
-shop
+promo-banner-books
+promo-banner-sale
+promo-banner-shipping
+promo-banners
+related-products
+shop-header
+shop-title
 ```
 
 ### Cart and checkout
@@ -239,15 +311,6 @@ orders-table
 ### Banking
 
 ```text
-account
-account-back-link
-account-balance
-account-balance-<id>
-account-card-<id>
-account-list
-account-number-<id>
-account-status
-account-status-<id>
 banking
 banking-deposit-link
 banking-empty-state
@@ -272,7 +335,93 @@ transfer-to-account
 withdrawal
 ```
 
-### Travel
+### Travel & Cruise home
+
+```text
+destination-card-<id>
+destination-image-<id>
+featured-ships
+hotel-destinations
+hotel-destinations-view-all
+ship-card-<id>
+ship-image-<id>
+ship-image-placeholder-<id>
+travel-categories
+travel-category-<id>
+travel-hero
+travel-hero-image
+travel-promo-strip
+travel-search-panel
+travel-tab-<id>
+travel-title
+upcoming-sailings
+upcoming-sailings-view-all
+```
+
+### Cruises
+
+```text
+cabin-left-<type>
+cabin-option-<type>
+cabin-price-<type>
+cabin-radio-<type>
+cabin-sold-out-<type>
+cruise-booking-error
+cruise-booking-form
+cruise-booking-pagination
+cruise-booking-submit-button
+cruise-booking-total
+cruise-cabin-error
+cruise-destination-select
+cruise-empty-state
+cruise-filter-clear
+cruise-filter-error-<id>
+cruise-filter-errors
+cruise-filter-form
+cruise-filter-submit
+cruise-guests
+cruise-guests-input
+cruise-lead-guest
+cruise-max-nights-input
+cruise-min-nights-input
+cruise-month-input
+cruise-pagination
+cruise-port-select
+cruise-result-count
+cruise-search-destination-select
+cruise-search-form
+cruise-search-month-input
+cruise-search-port-select
+cruise-search-submit
+cruise-ship-select
+cruise-sort-select
+cruises-back-link
+cruises-header
+cruises-title
+itinerary-stop-<id>
+sailing-back-link
+sailing-cabins-left-<id>
+sailing-card-<id>
+sailing-dates-<id>
+sailing-departed
+sailing-detail-image
+sailing-detail-image-placeholder
+sailing-detail-summary
+sailing-detail-title
+sailing-hero
+sailing-image-<id>
+sailing-image-placeholder-<id>
+sailing-itinerary
+sailing-list
+sailing-price-<id>
+sailing-sold-out-<id>
+sailing-title-<id>
+sailing-view-<id>
+ship-info
+ship-info-image
+```
+
+### Hotels and rooms
 
 ```text
 hotel-amenities
@@ -284,6 +433,7 @@ hotel-check-out-input
 hotel-description
 hotel-destination-input
 hotel-detail
+hotel-detail-image
 hotel-empty-state
 hotel-filter-clear
 hotel-filter-error-<id>
@@ -292,12 +442,20 @@ hotel-filter-form
 hotel-filter-submit
 hotel-grid
 hotel-guests-input
+hotel-image-<id>
+hotel-image-placeholder-<id>
 hotel-name-<id>
 hotel-pagination
 hotel-price-<id>
 hotel-result-count
+hotel-search-check-in-input
+hotel-search-check-out-input
+hotel-search-destination-input
+hotel-search-form
+hotel-search-submit
 hotel-sort-select
 hotel-stars-select
+hotels
 room-available-<id>
 room-back-link
 room-card-<id>
@@ -318,7 +476,6 @@ stay-error-<id>
 stay-filter-errors
 stay-filter-form
 stay-guests-input
-travel
 ```
 
 ### Bookings
@@ -334,6 +491,7 @@ booking-detail
 booking-detail-check-in
 booking-detail-check-out
 booking-detail-guests
+booking-detail-lead-guest
 booking-detail-nights
 booking-detail-room
 booking-detail-status
@@ -343,10 +501,11 @@ booking-error
 booking-filter-error
 booking-filter-form
 booking-filter-submit
+booking-form
 booking-guest-limit
 booking-guests
+booking-lead-guest
 booking-link-<id>
-booking-login-link
 booking-nights
 booking-pagination
 booking-row-<id>
@@ -358,7 +517,29 @@ booking-summary
 booking-total
 bookings
 bookings-empty-state
+bookings-tab-<id>
 bookings-table
+bookings-tabs
+cruise-booking-back-link
+cruise-booking-cancel
+cruise-booking-confirmation
+cruise-booking-detail
+cruise-booking-detail-cabin
+cruise-booking-detail-departs
+cruise-booking-detail-guests
+cruise-booking-detail-lead-guest
+cruise-booking-detail-price
+cruise-booking-detail-returns
+cruise-booking-detail-sailing
+cruise-booking-detail-ship
+cruise-booking-detail-status
+cruise-booking-detail-total
+cruise-booking-link-<id>
+cruise-booking-row-<id>
+cruise-booking-status-<id>
+cruise-booking-summary
+cruise-bookings-empty-state
+cruise-bookings-table
 ```
 
 ### Admin
@@ -411,6 +592,8 @@ product-form-category
 product-form-description-error
 product-form-description-input
 product-form-error
+product-form-image-url
+product-form-list-price
 product-form-name
 product-form-price
 product-form-sku
@@ -424,4 +607,3 @@ product-form-submit-button
 api-docs
 swagger-ui
 ```
-

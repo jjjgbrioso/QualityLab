@@ -9,7 +9,7 @@ import { useSubmit } from "@/lib/client/use-submit";
 
 export function RegisterForm() {
   const router = useRouter();
-  const { pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
+  const { ready, pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +38,7 @@ export function RegisterForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="space-y-4" data-testid="register-form">
+    <form method="post" onSubmit={onSubmit} noValidate className="space-y-4" data-testid="register-form">
       {error ? <Alert tone="error" testId="register-error">{error}</Alert> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="First name" name="firstName" autoComplete="given-name" testId="register-first-name" error={fieldErrors.firstName} />
@@ -62,7 +62,7 @@ export function RegisterForm() {
         testId="register-confirm-password"
         error={fieldErrors.confirmPassword}
       />
-      <button type="submit" disabled={pending} className={`${buttonStyles.primary} w-full`} data-testid="register-submit-button">
+      <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} w-full`} data-testid="register-submit-button">
         {pending ? "Creating account..." : "Create account"}
       </button>
     </form>
