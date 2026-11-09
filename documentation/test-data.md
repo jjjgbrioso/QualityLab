@@ -14,6 +14,8 @@ All data is fictional. `npm run db:reset` restores exactly this baseline, includ
 
 User ids are `user_admin`, `user_alice`, `user_bob`, `user_empty`, and `user_disabled`.
 
+Each login opens one module: `ecommerce`, `banking`, `travel`, or `admin`. Only `admin@qualitylab.test` can open `admin`. Any account can open the three customer modules. See the [API guide](api-guide.md#one-module-per-login).
+
 ## Simulated payment cards
 
 Only these numbers are accepted. Any other valid card number returns 400 `TEST_CARD_REQUIRED`. Use any future expiry, such as `12/30`, and any 3-digit CVV. Card numbers are never stored.

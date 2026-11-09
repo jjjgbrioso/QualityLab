@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { moduleForApi } from "@/lib/modules";
 import { loginSchema, registerSchema } from "@/lib/validation/auth";
 import { cashTransactionSchema, transferSchema } from "@/lib/validation/bank";
 import {
@@ -147,6 +148,7 @@ const properties = (fields: Record<string, Json | string>) => ({
 });
 
 const dateTime = { type: "string", format: "date-time" };
+const MODULE = { type: "string", enum: ["ecommerce", "banking", "travel", "admin"], description: "The one module this token can use" };
 const IMAGE_URL = { type: ["string", "null"], description: "Photo path under the site root, or an https address. Null means no photo." };
 const nullable = (type: string) => ({ type: [type, "null"] });
 
@@ -191,6 +193,7 @@ const schemas: Record<string, Json> = {
     token: "string",
     tokenType: { type: "string", example: "Bearer" },
     expiresIn: "integer",
+    module: MODULE,
     user: ref("User"),
   }),
   Product: properties({
@@ -455,7 +458,8 @@ const paths: Record<string, Record<string, Json>> = {
     post: operation({
       tag: "Auth",
       summary: "Log in and receive a JWT",
-      description: "Also sets an HttpOnly session cookie, which is how the web pages authenticate.",
+      description:
+        "A token opens one module: ecommerce, banking, travel, or admin. Its endpoints return 403 MODULE_NOT_ALLOWED for any other module, so log in once per module. Only ADMIN accounts can choose admin. Also sets an HttpOnly session cookie, which is how the web pages authenticate. A browser that signs in again ends its previous session.",
       body: loginSchema,
       schema: ref("LoginResult"),
       errors: [401, 403],
@@ -470,7 +474,12 @@ const paths: Record<string, Record<string, Json>> = {
     }),
   },
   "/api/v1/auth/me": {
-    get: operation({ tag: "Auth", summary: "Current user", auth: true, schema: ref("User") }),
+    get: operation({
+      tag: "Auth",
+      summary: "Current user and module",
+      auth: true,
+      schema: properties({ id: "string", email: "string", firstName: "string", lastName: "string", role: { type: "string", enum: ["CUSTOMER", "ADMIN"] }, module: MODULE }),
+    }),
   },
   "/api/v1/products": {
     get: operation({
@@ -935,6 +944,20 @@ const paths: Record<string, Record<string, Json>> = {
   },
 };
 
+// A signed-in endpoint that belongs to a module refuses tokens issued for any other module.
+for (const [path, methods] of Object.entries(paths)) {
+  const owner = moduleForApi(path);
+  if (!owner) continue;
+  for (const op of Object.values(methods)) {
+    if (!op.security) continue;
+    const responses = op.responses as Json;
+    responses[403] ??= {
+      description: `${STATUS_TEXT[403]}. Includes MODULE_NOT_ALLOWED when the token was issued for a module other than ${owner}.`,
+      content: { "application/json": { schema: ref("ErrorResponse") } },
+    };
+  }
+}
+
 export function openApiDocument() {
   return {
     openapi: "3.1.0",
@@ -942,7 +965,7 @@ export function openApiDocument() {
       title: "QualityLab API",
       version: "1.0.0",
       description:
-        "A demonstration API for QA automation practice. Payments and banking are simulated. Money values are integer cents. Log in with POST /api/v1/auth/login, then use Authorize with the returned token.",
+        "A demonstration API for QA automation practice. Payments and banking are simulated. Money values are integer cents. Log in with POST /api/v1/auth/login and a module, then use Authorize with the returned token. Each token opens one module.",
     },
     servers: [{ url: "/", description: "This environment" }],
     tags: ["System", "Auth", "Products", "Cart", "Orders", "Banking", "Travel", "Bookings", "Cruises", "Admin"].map((name) => ({ name })),

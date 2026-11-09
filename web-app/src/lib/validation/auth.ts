@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { APP_MODULES } from "@/lib/modules";
 import { requiredText } from "@/lib/validation/common";
 
 const emailField = z
@@ -27,6 +28,8 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: emailField,
   password: z.string({ error: "Password is required." }).min(1, "Password is required."),
+  // A session unlocks one module. Signing in to another one needs a new login.
+  module: z.enum(APP_MODULES, { error: "Choose a module: ecommerce, banking, travel, or admin." }),
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;

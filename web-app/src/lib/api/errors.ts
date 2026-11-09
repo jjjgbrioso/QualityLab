@@ -21,5 +21,8 @@ export const notFound = (resource: string, code = "NOT_FOUND") =>
 export const forbidden = (message = "You do not have permission to do this.") =>
   new ApiError(403, "FORBIDDEN", message);
 
+export const moduleNotAllowed = (signedIn: string, needed: string) =>
+  new ApiError(403, "MODULE_NOT_ALLOWED", `This session is signed in to ${signedIn}. Sign in to ${needed} to continue.`);
+
 export const unauthorized = () =>
   new ApiError(401, "UNAUTHORIZED", "Sign in with a valid token to continue.");

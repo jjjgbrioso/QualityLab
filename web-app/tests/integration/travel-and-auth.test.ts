@@ -129,25 +129,25 @@ describeWithDatabase("authentication", () => {
   });
 
   it("logs in the seeded accounts", async () => {
-    await expect(loginUser({ email: "admin@qualitylab.test", password: "Admin@12345" })).resolves.toMatchObject({ user: { role: "ADMIN" } });
-    await expect(loginUser({ email: "alice@qualitylab.test", password: "Customer@123" })).resolves.toMatchObject({ user: { role: "CUSTOMER" } });
+    await expect(loginUser({ email: "admin@qualitylab.test", password: "Admin@12345", module: "admin" })).resolves.toMatchObject({ user: { role: "ADMIN" } });
+    await expect(loginUser({ email: "alice@qualitylab.test", password: "Customer@123", module: "banking" })).resolves.toMatchObject({ user: { role: "CUSTOMER" } });
   });
 
   it("gives the same error for a wrong password and an unknown email", async () => {
-    const wrongPassword = await failure(loginUser({ email: "alice@qualitylab.test", password: "Wrong@123" }));
-    const unknownEmail = await failure(loginUser({ email: "ghost@qualitylab.test", password: "Wrong@123" }));
+    const wrongPassword = await failure(loginUser({ email: "alice@qualitylab.test", password: "Wrong@123", module: "banking" }));
+    const unknownEmail = await failure(loginUser({ email: "ghost@qualitylab.test", password: "Wrong@123", module: "banking" }));
 
     expect(wrongPassword).toMatchObject({ status: 401, code: "INVALID_CREDENTIALS" });
     expect(unknownEmail.message).toBe(wrongPassword.message);
   });
 
   it("refuses a disabled account", async () => {
-    const error = await failure(loginUser({ email: "disabled@qualitylab.test", password: "Customer@123" }));
+    const error = await failure(loginUser({ email: "disabled@qualitylab.test", password: "Customer@123", module: "banking" }));
     expect(error).toMatchObject({ status: 403, code: "ACCOUNT_DISABLED" });
   });
 
   it("records a revoked token", async () => {
-    const { token } = await loginUser({ email: "alice@qualitylab.test", password: "Customer@123" });
+    const { token } = await loginUser({ email: "alice@qualitylab.test", password: "Customer@123", module: "banking" });
     const claims = await verifyToken(token);
     await revokeToken(claims!.jti, claims!.expiresAt);
     await expect(prisma.revokedToken.count({ where: { jti: claims!.jti } })).resolves.toBe(1);

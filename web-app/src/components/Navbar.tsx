@@ -2,29 +2,48 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/forms/LogoutButton";
 import { MobileNav } from "@/components/MobileNav";
 import { getSessionUser } from "@/lib/auth/session";
+import { type AppModule, MODULE_LABELS } from "@/lib/modules";
 import { cartItemCount } from "@/lib/services/cart";
 
 const LINK_STYLE = "rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-canvas hover:text-ink";
 
+type NavLink = { href: string; label: string; testId: string };
+
+/** Links for the one module a session can use. Other modules are reached from the home page. */
+function moduleLinks(module: AppModule, cartCount: number): NavLink[] {
+  switch (module) {
+    case "ecommerce":
+      return [
+        { href: "/shop", label: "E-commerce", testId: "nav-link-ecommerce" },
+        { href: "/orders", label: "Orders", testId: "nav-link-orders" },
+        { href: "/cart", label: `Cart (${cartCount})`, testId: "nav-link-cart" },
+      ];
+    case "banking":
+      return [{ href: "/banking", label: "Banking", testId: "nav-link-banking" }];
+    case "travel":
+      return [
+        { href: "/travel", label: "Travel & Cruise", testId: "nav-link-travel" },
+        { href: "/bookings", label: "Bookings", testId: "nav-link-bookings" },
+      ];
+    case "admin":
+      return [{ href: "/admin", label: "Admin", testId: "nav-link-admin" }];
+  }
+}
+
 export async function Navbar() {
   const user = await getSessionUser();
-  const cartCount = user ? await cartItemCount(user.id) : 0;
+  const cartCount = user?.module === "ecommerce" ? await cartItemCount(user.id) : 0;
 
-  const primary = [
-    { href: "/shop", label: "E-commerce", testId: "nav-link-ecommerce" },
-    { href: "/banking", label: "Banking", testId: "nav-link-banking" },
-    { href: "/travel", label: "Travel & Cruise", testId: "nav-link-travel" },
-    { href: "/api-docs", label: "API Docs", testId: "nav-link-api-docs" },
-  ];
-  const account = user
-    ? [
-        ...(user.role === "ADMIN" ? [{ href: "/admin", label: "Admin", testId: "nav-link-admin" }] : []),
-        { href: "/orders", label: "Orders", testId: "nav-link-orders" },
-        { href: "/bookings", label: "Bookings", testId: "nav-link-bookings" },
-        { href: "/cart", label: `Cart (${cartCount})`, testId: "nav-link-cart" },
-        { href: "/account", label: "Account", testId: "nav-link-account" },
-      ]
-    : []; // Signing in starts from choosing a module, so there is no Login link.
+  // Signed out, every module is offered and each one leads to its login page. There is no Login link.
+  const primary: NavLink[] = user
+    ? [{ href: "/", label: "All modules", testId: "nav-link-modules" }, { href: "/api-docs", label: "API Docs", testId: "nav-link-api-docs" }]
+    : [
+        { href: "/shop", label: "E-commerce", testId: "nav-link-ecommerce" },
+        { href: "/banking", label: "Banking", testId: "nav-link-banking" },
+        { href: "/travel", label: "Travel & Cruise", testId: "nav-link-travel" },
+        { href: "/api-docs", label: "API Docs", testId: "nav-link-api-docs" },
+      ];
+  const account = user ? [...moduleLinks(user.module, cartCount), { href: "/account", label: "Account", testId: "nav-link-account" }] : [];
 
   return (
     <header className="relative border-b border-line bg-surface">
@@ -49,6 +68,9 @@ export async function Navbar() {
             <>
               <span className="ml-1 text-sm text-muted" data-testid="nav-user-name">
                 {user.firstName}
+              </span>
+              <span className="rounded-full bg-canvas px-2 py-0.5 text-xs font-medium text-ink ring-1 ring-line" data-testid="nav-current-module">
+                {MODULE_LABELS[user.module]}
               </span>
               <LogoutButton testId="nav-logout" />
             </>

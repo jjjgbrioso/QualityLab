@@ -12,7 +12,7 @@ Priority: P1 is critical, P2 is important, and P3 is useful coverage.
 | AUTH-02 | Negative | P1 | Register with an email already in use | 409 `EMAIL_ALREADY_REGISTERED` |
 | AUTH-03 | Negative | P2 | Register with invalid fields | 400 `VALIDATION_ERROR`, with a message per field |
 | AUTH-04 | Negative | P1 | Register with `role: "ADMIN"` in the body | 201, and the role is still CUSTOMER |
-| AUTH-05 | Positive | P1 | Log in with valid details | 200 with a JWT and an HttpOnly cookie |
+| AUTH-05 | Positive | P1 | Log in with valid details and a module | 200 with a JWT, the module, and an HttpOnly cookie |
 | AUTH-06 | Negative | P1 | Log in with a wrong password | 401 `INVALID_CREDENTIALS` |
 | AUTH-07 | Negative | P2 | Log in with an unknown email | Same 401 and message as AUTH-06 |
 | AUTH-08 | Negative | P1 | Log in as the disabled user | 403 `ACCOUNT_DISABLED` |
@@ -20,10 +20,20 @@ Priority: P1 is critical, P2 is important, and P3 is useful coverage.
 | AUTH-10 | Positive | P2 | Log out in one session | Another session for the same user keeps working |
 | AUTH-11 | Negative | P1 | Call a protected endpoint with no token or a bad token | 401 `UNAUTHORIZED` |
 | AUTH-12 | Negative | P1 | Choose E-commerce, Banking, or Travel while signed out | Redirect to `/login?next=...` with a sign-in notice, then back to that module after login |
-| AUTH-13 | Negative | P1 | Open `/admin` as a customer | `/forbidden` page |
+| AUTH-13 | Negative | P1 | Open `/admin` and sign in as a customer | Login page for Admin, then 403 `MODULE_NOT_ALLOWED`: only admin accounts can sign in |
 | AUTH-14 | Negative | P1 | Open `/login?next=https://example.com`, then log in | User stays on this site |
 | AUTH-15 | Positive | P2 | Open `/shop?category=Books` while signed out, then log in | Returns to the shop with the Books filter still applied |
 | AUTH-16 | Positive | P3 | Open the home page, API docs, login, and registration while signed out | All load without a login |
+| MOD-01 | Positive | P1 | Choose Banking on the home page and sign in | Banking opens. The navigation shows only Banking, Account, All modules, and API Docs |
+| MOD-02 | Negative | P1 | Signed in to Banking, open `/shop` | Login page titled "Sign in to E-commerce" with `login-switch-notice` |
+| MOD-03 | Positive | P1 | Signed in to Banking, go home, choose E-commerce, and sign in | The shop opens. `/banking` now goes to the login page |
+| MOD-04 | Negative | P1 | Call `/api/v1/cart` with a banking token | 403 `MODULE_NOT_ALLOWED` |
+| MOD-05 | Negative | P1 | Log in without `module`, or with `module: "shop"` | 400 `VALIDATION_ERROR` on `module` |
+| MOD-06 | Negative | P1 | Log in as a customer with `module: "admin"` | 403 `MODULE_NOT_ALLOWED` |
+| MOD-07 | Negative | P2 | Admin signed in to E-commerce calls `/api/v1/admin/stats` | 403 `MODULE_NOT_ALLOWED` |
+| MOD-08 | Negative | P1 | Save the browser's E-commerce token, sign in to Travel in the same browser, then reuse the saved token | 401 `UNAUTHORIZED`: the earlier session was ended |
+| MOD-09 | Positive | P2 | Log in through the API to two modules without a cookie | Both tokens keep working, each in its own module |
+| MOD-10 | Positive | P3 | Open `/account` in Travel | Only hotel and cruise activity is shown, and `account-module` says Travel & Cruise |
 
 ## E-commerce
 

@@ -75,7 +75,8 @@ Other shared patterns:
 - **Loading placeholders:** module pages show `data-testid="page-loading"` while they load. Wait for it to disappear, or for the page title id.
 - **Sort selects** on the shop and cruise search submit as soon as they change.
 - **Cart quantity** saves when the field loses focus, so tab out of it after typing.
-- **Sign-in first:** there is no Login link in the navigation. Every E-commerce, Banking, and Travel page requires a login. A signed-out visit goes to `/login?next=...` and returns to the same page, filters included, after login. The home page, API docs, login, and registration are public.
+- **Sign-in first:** there is no Login link in the navigation. Every E-commerce, Banking, Travel, and Admin page requires a login. A signed-out visit goes to `/login?next=...` and returns to the same page, filters included, after login. The home page, API docs, login, and registration are public.
+- **One module per sign-in:** the login page signs in to the module of the page being opened, and its title says which, such as "Sign in to Banking". While signed in, the navigation shows only that module's links, `nav-current-module` names it, and `nav-link-modules` returns to the home page. Opening another module's page shows its login page with `login-switch-notice`. Signing in there ends the previous session, so the previous module's pages go back to the login page. `/account` works in any module and shows only that module's activity. Opening `/login` directly shows a module select, `login-module-select`.
 - **Signed-out redirects happen in the browser:** module pages stream a loading placeholder first, so a signed-out request returns HTTP 200, not 307. The page then redirects to `/login?next=...` with a script and a `<meta http-equiv="refresh">` tag, and it contains no module data. Browsers, Playwright, and Selenium follow it, so assert on the final URL. A plain HTTP client sees only the 200, so check that the body contains `/login?next=` and no module test ids, such as `product-card-`.
 - **Filters** are plain GET forms, so you can open a filtered page directly with a URL.
 - **Cancel** uses an inline confirmation, not a native browser dialog.
@@ -88,7 +89,7 @@ Other shared patterns:
 UI tests can log in and create data through the API, which is faster than driving the UI:
 
 ```text
-POST /api/v1/auth/login   returns a token and sets the session cookie
+POST /api/v1/auth/login   body includes "module"; returns a token for that module and sets the session cookie
 POST /api/v1/cart/items   adds an item with the Bearer token
 ```
 
@@ -117,6 +118,8 @@ home-title
 mobile-menu
 mobile-menu-toggle
 mobile-nav-logout
+nav-current-module
+nav-link-modules
 nav-logo
 nav-logout
 nav-main
@@ -132,10 +135,13 @@ page-loading
 login-email
 login-error
 login-form
+login-module
 login-password
 login-register-link
+login-registered-notice
 login-required-notice
 login-submit-button
+login-switch-notice
 login-title
 register-confirm-password
 register-email
@@ -155,12 +161,14 @@ test-accounts-panel
 
 ```text
 account
+account-admin-note
 account-back-link
 account-balance
 account-balance-<id>
 account-card-<id>
 account-email
 account-list
+account-module
 account-name
 account-number-<id>
 account-profile

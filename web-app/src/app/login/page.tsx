@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/forms/LoginForm";
 import { Alert, Card, linkStyles } from "@/components/ui";
 import { getSessionUser, safeNextPath } from "@/lib/auth/session";
+import { MODULE_LABELS, moduleForPage } from "@/lib/modules";
 import type { SearchParams } from "@/lib/page-helpers";
 
 export const metadata: Metadata = { title: "Login" };
@@ -17,31 +18,48 @@ const TEST_ACCOUNTS = [
 ];
 
 export default async function LoginPage({ searchParams }: { searchParams: SearchParams }) {
-  const { next } = await searchParams;
+  const { next, registered } = await searchParams;
   const nextPath = safeNextPath(typeof next === "string" ? next : undefined);
-  if (await getSessionUser()) redirect(nextPath);
+  const pageModule = moduleForPage(nextPath);
+  const session = await getSessionUser();
+  // Already signed in to the module this page needs, or to any module for a page that needs none.
+  if (session && (pageModule === null ? nextPath !== "/" : session.module === pageModule)) redirect(nextPath);
+  const switching = session && pageModule && session.module !== pageModule ? session.module : null;
   const redirectedHere = nextPath !== "/";
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
       <Card className="p-6">
         <h1 className="text-xl font-semibold" data-testid="login-title">
-          Sign in
+          {pageModule ? `Sign in to ${MODULE_LABELS[pageModule]}` : "Sign in"}
         </h1>
         <p className="mb-4 mt-1 text-sm text-muted">
           New here?{" "}
-          <Link href="/register" className={linkStyles} data-testid="login-register-link">
+          <Link href={redirectedHere ? `/register?next=${encodeURIComponent(nextPath)}` : "/register"} className={linkStyles} data-testid="login-register-link">
             Create an account
           </Link>
         </p>
-        {redirectedHere ? (
+        {switching && pageModule ? (
+          <div className="mb-4">
+            <Alert tone="warning" testId="login-switch-notice">
+              You are signed in to {MODULE_LABELS[switching]}. Each sign-in opens one module, so signing in to {MODULE_LABELS[pageModule]} ends
+              your {MODULE_LABELS[switching]} session.
+            </Alert>
+          </div>
+        ) : registered === "1" ? (
+          <div className="mb-4">
+            <Alert tone="success" testId="login-registered-notice">
+              Your account is ready. Choose a module and sign in.
+            </Alert>
+          </div>
+        ) : redirectedHere ? (
           <div className="mb-4">
             <Alert tone="info" testId="login-required-notice">
               Please sign in to continue.
             </Alert>
           </div>
         ) : null}
-        <LoginForm next={nextPath} />
+        <LoginForm next={nextPath} module={pageModule} />
       </Card>
 
       <Card className="p-6" testId="test-accounts-panel">

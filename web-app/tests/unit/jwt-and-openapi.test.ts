@@ -5,12 +5,27 @@ import { openApiDocument } from "@/lib/openapi";
 
 describe("JWT", () => {
   it("accepts a token it issued", async () => {
-    const { token } = await signToken("user_1", "CUSTOMER");
-    await expect(verifyToken(token)).resolves.toMatchObject({ userId: "user_1" });
+    const { token } = await signToken("user_1", "CUSTOMER", "banking");
+    await expect(verifyToken(token)).resolves.toMatchObject({ userId: "user_1", module: "banking" });
+  });
+
+  it("rejects a token without a valid module", async () => {
+    const sign = (claims: Record<string, unknown>) =>
+      new SignJWT(claims)
+        .setProtectedHeader({ alg: "HS256" })
+        .setSubject("user_1")
+        .setJti("jti-1")
+        .setIssuer("qualitylab")
+        .setAudience("qualitylab-api")
+        .setIssuedAt()
+        .setExpirationTime("1h")
+        .sign(new TextEncoder().encode(process.env.JWT_SECRET));
+    await expect(verifyToken(await sign({ role: "CUSTOMER" }))).resolves.toBeNull();
+    await expect(verifyToken(await sign({ role: "CUSTOMER", module: "casino" }))).resolves.toBeNull();
   });
 
   it("rejects a tampered token", async () => {
-    const { token } = await signToken("user_1", "CUSTOMER");
+    const { token } = await signToken("user_1", "CUSTOMER", "banking");
     const [header, payload, signature] = token.split(".");
     await expect(verifyToken(`${header}.${payload}x.${signature}`)).resolves.toBeNull();
   });

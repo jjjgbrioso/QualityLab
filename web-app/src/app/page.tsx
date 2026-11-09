@@ -20,6 +20,12 @@ const MODULES = [
     title: "Travel & Cruise",
     text: "Cruise and hotel search, cabin and room availability, bookings, cancellation, and guest validation.",
   },
+  {
+    href: "/admin",
+    id: "admin",
+    title: "Admin",
+    text: "Products, inventory, orders, and users. Admin accounts only.",
+  },
 ];
 
 const FEATURES = [
@@ -39,8 +45,8 @@ export default function HomePage() {
           A realistic target system for QA automation
         </h1>
         <p className="mt-3 max-w-2xl text-muted">
-          QualityLab combines three simulated business domains behind one login and one API, so UI, API, and
-          performance tests can all run against the same application.
+          QualityLab combines three simulated business domains behind one API, so UI, API, and performance tests
+          can all run against the same application. Choose a module to sign in. Each sign-in opens one module.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link href="/shop" className={buttonStyles.primary} data-testid="home-cta-explore">
@@ -56,7 +62,7 @@ export default function HomePage() {
         <h2 id="modules-heading" className="mb-3 text-lg font-semibold">
           Modules
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {MODULES.map((module) => (
             <Link key={module.id} href={module.href} className="group" data-testid={`home-module-${module.id}`}>
               <Card className="h-full p-5 transition-colors group-hover:border-brand-700">

@@ -82,8 +82,12 @@ export async function loginUser(input: LoginInput) {
     throw new ApiError(403, "ACCOUNT_DISABLED", "This account has been disabled.");
   }
 
-  const { token, expiresIn } = await signToken(user.id, user.role);
-  return { token, expiresIn, user: toUserDto(user) };
+  if (input.module === "admin" && user.role !== "ADMIN") {
+    throw new ApiError(403, "MODULE_NOT_ALLOWED", "Only admin accounts can sign in to the Admin module.");
+  }
+
+  const { token, expiresIn } = await signToken(user.id, user.role, input.module);
+  return { token, expiresIn, module: input.module, user: toUserDto(user) };
 }
 
 /** Ends one token, leaving other sessions for the same user active. */

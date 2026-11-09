@@ -4,13 +4,13 @@ The interactive reference is at `/api-docs`, and the raw OpenAPI 3.1 document is
 
 ## Authentication
 
-Log in to get a token, then send it as a Bearer token.
+Log in to get a token, then send it as a Bearer token. Each login opens **one module**, named in the body.
 
 ```http
 POST /api/v1/auth/login
 Content-Type: application/json
 
-{ "email": "alice@qualitylab.test", "password": "Customer@123" }
+{ "email": "alice@qualitylab.test", "password": "Customer@123", "module": "banking" }
 ```
 
 ```http
@@ -19,6 +19,22 @@ Authorization: Bearer <token>
 ```
 
 Login also sets an HttpOnly cookie, which is how the web pages authenticate. Tokens last 2 hours by default. `POST /api/v1/auth/logout` revokes only the token it is called with.
+
+### One module per login
+
+| Module | `module` value | Pages | Signed-in API endpoints |
+| --- | --- | --- | --- |
+| E-commerce | `ecommerce` | `/shop`, `/cart`, `/checkout`, `/orders` | `/api/v1/cart`, `/api/v1/orders` |
+| Banking | `banking` | `/banking` | `/api/v1/bank` |
+| Travel & Cruise | `travel` | `/travel`, `/bookings` | `/api/v1/bookings`, `/api/v1/cruise-bookings` |
+| Admin | `admin` | `/admin` | `/api/v1/admin` |
+
+- A token works only on its own module's endpoints. Any other module's endpoints return 403 `MODULE_NOT_ALLOWED`. To test two modules, log in once for each.
+- `module` is required. A missing or unknown value returns 400 `VALIDATION_ERROR` on the field `module`.
+- Only ADMIN accounts can log in with `admin`. A customer gets 403 `MODULE_NOT_ALLOWED`. An admin who logs in to a customer module cannot use the admin endpoints with that token.
+- `GET /api/v1/auth/me`, `POST /api/v1/auth/logout`, and the public catalogue endpoints (products, hotels, rooms, ships, and cruises) work with any module.
+- A browser holds one session. When it logs in again, the token in its session cookie is revoked, so the previous module locks. Logins that send no cookie, such as API clients, do not affect each other.
+- The login response and `GET /api/v1/auth/me` include `module`.
 
 ## Response format
 
@@ -79,6 +95,7 @@ An error:
 | `TEST_CARD_REQUIRED` | 400 | The card is not one of the documented test cards |
 | `UNAUTHORIZED` | 401 | A valid token is required |
 | `INVALID_CREDENTIALS` | 401 | The email or password is wrong |
+| `MODULE_NOT_ALLOWED` | 403 | The token was issued for another module, or a customer tried to log in to Admin |
 | `PAYMENT_DECLINED` | 402 | The test card was declined |
 | `PAYMENT_INSUFFICIENT_FUNDS` | 402 | The test card has insufficient funds |
 | `FORBIDDEN` | 403 | Wrong role, or the resource belongs to someone else |

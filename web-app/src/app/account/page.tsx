@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Card, PageHeader, StatusBadge } from "@/components/ui";
 import { requirePageUser } from "@/lib/auth/session";
+import { MODULE_LABELS } from "@/lib/modules";
 import { formatDisplayDateTime } from "@/lib/dates";
 import { accountSummary } from "@/lib/services/account";
 
@@ -11,13 +12,14 @@ export default async function AccountPage() {
   const session = await requirePageUser("/account");
   const { user, counts } = await accountSummary(session.id);
 
+  // Only the signed-in module's activity is shown, because the other modules are locked.
   const tiles = [
-    { label: "Orders", value: counts.orders, href: "/orders", testId: "account-orders" },
-    { label: "Items in cart", value: counts.cartItems, href: "/cart", testId: "account-cart" },
-    { label: "Upcoming hotel stays", value: counts.hotelBookings, href: "/bookings", testId: "account-hotel-bookings" },
-    { label: "Upcoming cruises", value: counts.cruiseBookings, href: "/bookings?type=cruises", testId: "account-cruise-bookings" },
-    { label: "Bank accounts", value: counts.bankAccounts, href: "/banking", testId: "account-bank-accounts" },
-  ];
+    { module: "ecommerce", label: "Orders", value: counts.orders, href: "/orders", testId: "account-orders" },
+    { module: "ecommerce", label: "Items in cart", value: counts.cartItems, href: "/cart", testId: "account-cart" },
+    { module: "travel", label: "Upcoming hotel stays", value: counts.hotelBookings, href: "/bookings", testId: "account-hotel-bookings" },
+    { module: "travel", label: "Upcoming cruises", value: counts.cruiseBookings, href: "/bookings?type=cruises", testId: "account-cruise-bookings" },
+    { module: "banking", label: "Bank accounts", value: counts.bankAccounts, href: "/banking", testId: "account-bank-accounts" },
+  ].filter((tile) => tile.module === session.module);
 
   return (
     <>
@@ -42,6 +44,10 @@ export default async function AccountPage() {
               <dd><StatusBadge status={user.role} testId="account-role" /></dd>
             </div>
             <div>
+              <dt className="text-muted">Signed in to</dt>
+              <dd data-testid="account-module">{MODULE_LABELS[session.module]}</dd>
+            </div>
+            <div>
               <dt className="text-muted">Member since</dt>
               <dd>{formatDisplayDateTime(user.createdAt)}</dd>
             </div>
@@ -50,6 +56,11 @@ export default async function AccountPage() {
 
         <section aria-labelledby="activity-heading" className="lg:col-span-2">
           <h2 id="activity-heading" className="mb-3 font-semibold">Activity</h2>
+          {tiles.length === 0 ? (
+            <p className="text-sm text-muted" data-testid="account-admin-note">
+              Admin activity is on the <Link href="/admin" className="text-brand-700 hover:underline">admin dashboard</Link>.
+            </p>
+          ) : null}
           <ul className="grid gap-3 sm:grid-cols-2">
             {tiles.map((tile) => (
               <li key={tile.testId}>

@@ -6,8 +6,10 @@ import { Field } from "@/components/forms/fields";
 import { Alert, buttonStyles } from "@/components/ui";
 import { apiRequest } from "@/lib/client/api";
 import { useSubmit } from "@/lib/client/use-submit";
+import { moduleForPage } from "@/lib/modules";
 
-export function RegisterForm() {
+/** After registering, signs in to the module the visitor was opening, or sends them home to choose one. */
+export function RegisterForm({ next }: { next: string }) {
   const router = useRouter();
   const { ready, pending, error, fieldErrors, submit, setFieldErrors, reset } = useSubmit();
 
@@ -30,8 +32,13 @@ export function RegisterForm() {
           body: { ...credentials, firstName: form.get("firstName"), lastName: form.get("lastName") },
         }),
       async () => {
-        await apiRequest("/auth/login", { method: "POST", body: credentials });
-        router.replace("/banking");
+        const target = moduleForPage(next);
+        if (target) {
+          await apiRequest("/auth/login", { method: "POST", body: { ...credentials, module: target } });
+          router.replace(next);
+        } else {
+          router.replace("/login?registered=1");
+        }
         router.refresh();
       },
     );

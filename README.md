@@ -2,7 +2,7 @@
 
 QualityLab is a personal QA engineering project by Job G. Brioso. It is a demonstration web application built to be the target system for UI, API, and performance test automation.
 
-The application simulates three business domains behind one login and one REST API: e-commerce, banking, and travel with cruise and hotel booking. It uses fictional data, simulated payments, and no real banking or payment integrations.
+The application simulates three business domains behind one REST API: e-commerce, banking, and travel with cruise and hotel booking. Each sign-in opens one module, so switching modules means signing in again. It uses fictional data, simulated payments, and no real banking or payment integrations.
 
 > QualityLab is an independent educational and QA automation demonstration project. It is not affiliated with, endorsed by, or associated with any company or brand.
 
@@ -34,7 +34,7 @@ Later phases will add `selenium-java/`, `playwright-typescript/`, `api-testing/`
 - **Banking (simulated):** accounts and balances, deposits, withdrawals, transfers between test accounts, transaction history, and insufficient balance, invalid account, and duplicate transaction checks
 - **Travel & Cruise:** a travel homepage with cruise and hotel search; fictional ships, sailings, itineraries, and cabin types; cabin availability and booking; hotel search, room availability, and booking; guest information; booking history and cancellation, with date and guest validation
 - **Account:** a profile page with order, booking, cart, and bank account activity
-- **Authentication:** registration, login, logout, hashed passwords, JWT, and CUSTOMER and ADMIN roles on protected pages and endpoints
+- **Authentication:** registration, login, logout, hashed passwords, JWT, and CUSTOMER and ADMIN roles on protected pages and endpoints. Each login opens one module (E-commerce, Banking, Travel & Cruise, or Admin), and the pages and API refuse the others
 - **API:** versioned endpoints under `/api/v1/`, input validation, consistent status codes and errors, pagination, and Swagger documentation
 - **Automation support:** stable `data-testid` attributes, accessible labels, predictable test accounts, deterministic seed data, seed and reset scripts, and a health-check endpoint
 

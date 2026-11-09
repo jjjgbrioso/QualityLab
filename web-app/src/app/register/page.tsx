@@ -3,11 +3,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { RegisterForm } from "@/components/forms/RegisterForm";
 import { Card, linkStyles } from "@/components/ui";
-import { getSessionUser } from "@/lib/auth/session";
+import { getSessionUser, safeNextPath } from "@/lib/auth/session";
+import type { SearchParams } from "@/lib/page-helpers";
 
 export const metadata: Metadata = { title: "Register" };
 
-export default async function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: SearchParams }) {
+  const { next } = await searchParams;
+  const nextPath = safeNextPath(typeof next === "string" ? next : undefined);
   if (await getSessionUser()) redirect("/");
 
   return (
@@ -18,11 +21,11 @@ export default async function RegisterPage() {
         </h1>
         <p className="mb-4 mt-1 text-sm text-muted">
           Already registered?{" "}
-          <Link href="/login" className={linkStyles} data-testid="register-login-link">
+          <Link href={nextPath === "/" ? "/login" : `/login?next=${encodeURIComponent(nextPath)}`} className={linkStyles} data-testid="register-login-link">
             Sign in
           </Link>
         </p>
-        <RegisterForm />
+        <RegisterForm next={nextPath} />
       </Card>
     </div>
   );

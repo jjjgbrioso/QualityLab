@@ -2,8 +2,9 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
-import { forbidden, unauthorized } from "@/lib/api/errors";
+import { forbidden, moduleNotAllowed, unauthorized } from "@/lib/api/errors";
 import { verifyToken } from "@/lib/auth/jwt";
+import { type AppModule, MODULE_LABELS, moduleForApi, moduleForPage } from "@/lib/modules";
 import { prisma } from "@/lib/prisma";
 
 export const SESSION_COOKIE = "ql_session";
@@ -14,6 +15,8 @@ export type AuthUser = {
   firstName: string;
   lastName: string;
   role: "CUSTOMER" | "ADMIN";
+  /** The one module this session can use. */
+  module: AppModule;
   jti: string;
   tokenExpiresAt: Date;
 };
@@ -36,6 +39,7 @@ async function userFromToken(token: string | undefined): Promise<AuthUser | null
     firstName: user.firstName,
     lastName: user.lastName,
     role: user.role,
+    module: claims.module,
     jti: claims.jti,
     tokenExpiresAt: claims.expiresAt,
   };
@@ -47,9 +51,12 @@ function tokenFromRequest(req: NextRequest): string | undefined {
   return req.cookies.get(SESSION_COOKIE)?.value;
 }
 
+/** Also checks that the endpoint belongs to the module the token was issued for. */
 export async function requireAuth(req: NextRequest): Promise<AuthUser> {
   const user = await userFromToken(tokenFromRequest(req));
   if (!user) throw unauthorized();
+  const needed = moduleForApi(req.nextUrl.pathname);
+  if (needed && user.module !== needed) throw moduleNotAllowed(MODULE_LABELS[user.module], MODULE_LABELS[needed]);
   return user;
 }
 
@@ -64,9 +71,14 @@ export const getSessionUser = cache(async (): Promise<AuthUser | null> => {
   return userFromToken(store.get(SESSION_COOKIE)?.value);
 });
 
+/**
+ * Sends a visitor to the login page unless they are signed in to the module that owns `nextPath`.
+ * Signing in there replaces the current session, so the previous module locks.
+ */
 export async function requirePageUser(nextPath: string): Promise<AuthUser> {
   const user = await getSessionUser();
-  if (!user) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  const needed = moduleForPage(nextPath);
+  if (!user || (needed && user.module !== needed)) redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   return user;
 }
 
