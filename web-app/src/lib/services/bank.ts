@@ -64,11 +64,11 @@ export function toTransactionDto(transaction: BankTransaction) {
 export type AccountDto = ReturnType<typeof toAccountDto>;
 export type TransactionDto = ReturnType<typeof toTransactionDto>;
 
-const accountNotFound = (field: string) =>
+export const accountNotFound = (field: string) =>
   new ApiError(404, "ACCOUNT_NOT_FOUND", "Account not found.", [{ field, message: "No account matches this value." }]);
 
 // Inside a transaction, pass `tx`: a second pooled connection there can deadlock the pool under load.
-async function ownedAccount(actor: Actor, id: string, client: Pick<Tx, "bankAccount"> = prisma) {
+export async function ownedAccount(actor: Actor, id: string, client: Pick<Tx, "bankAccount"> = prisma) {
   const account = await client.bankAccount.findUnique({ where: { id } });
   if (!account) throw notFound("Account", "ACCOUNT_NOT_FOUND");
   if (account.userId !== actor.id && actor.role !== "ADMIN") {
@@ -108,7 +108,7 @@ export async function listTransactions(actor: Actor, accountId: string, query: T
 }
 
 /** Locks rows in id order, so two opposite transfers cannot deadlock each other. */
-async function lockAccounts(tx: Tx, ids: string[]) {
+export async function lockAccounts(tx: Tx, ids: string[]) {
   for (const id of [...new Set(ids)].sort()) {
     await tx.$queryRaw`SELECT id FROM "BankAccount" WHERE id = ${id} FOR UPDATE`;
   }
@@ -116,20 +116,20 @@ async function lockAccounts(tx: Tx, ids: string[]) {
   return new Map(rows.map((row) => [row.id, row]));
 }
 
-function assertActive(account: BankAccount) {
+export function assertActive(account: BankAccount) {
   if (account.status !== "ACTIVE") {
     throw new ApiError(422, "ACCOUNT_FROZEN", `Account ${account.accountNumber} is frozen.`);
   }
 }
 
 /** Time deposits take no deposits, and pay out only from the maturity date. */
-function assertNotTimeDepositInflow(account: BankAccount) {
+export function assertNotTimeDepositInflow(account: BankAccount) {
   if (account.type === "TIME_DEPOSIT") {
     throw new ApiError(422, "TIME_DEPOSIT_LOCKED", `Account ${account.accountNumber} is a time deposit and cannot receive money.`);
   }
 }
 
-function assertNotLocked(account: BankAccount) {
+export function assertNotLocked(account: BankAccount) {
   const until = lockedUntil(account);
   if (until) {
     throw new ApiError(422, "TIME_DEPOSIT_LOCKED", `Time deposit ${account.accountNumber} is locked until ${formatDisplayDate(until)}.`);
@@ -144,7 +144,7 @@ function assertWithinLimit(amountCents: number) {
   }
 }
 
-function assertSufficientFunds(account: BankAccount, amountCents: number) {
+export function assertSufficientFunds(account: BankAccount, amountCents: number) {
   if (account.balanceCents < amountCents) {
     throw new ApiError(422, "INSUFFICIENT_FUNDS", "The account balance is too low for this transaction.", [
       { field: "amountCents", message: `Available balance is ${formatCents(account.balanceCents)}.` },
@@ -180,7 +180,7 @@ async function assertNotDuplicate(
   }
 }
 
-type Idempotent = { actor: Actor; idempotencyKey: string };
+export type Idempotent = { actor: Actor; idempotencyKey: string };
 
 export function deposit({ actor, idempotencyKey }: Idempotent, input: CashTransactionInput) {
   return withIdempotency(

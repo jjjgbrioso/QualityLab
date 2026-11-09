@@ -106,6 +106,13 @@ export const icons = {
       <path d="M12 15V4M7 9l5-5 5 5M5 20h14" />
     </svg>
   ),
+  loan: (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="6" width="18" height="12" rx="2" />
+      <circle cx="12" cy="12" r="2.5" />
+      <path d="M6 9v.01M18 15v.01" />
+    </svg>
+  ),
   open: (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M12 5v14M5 12h14" />

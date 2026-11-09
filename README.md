@@ -35,6 +35,7 @@ Later phases will add `selenium-java/`, `playwright-typescript/`, `api-testing/`
 - **Travel & Cruise:** a travel homepage with cruise and hotel search; fictional ships, sailings, itineraries, and cabin types; cabin availability and booking; hotel search, room availability, and booking; guest information; booking history and cancellation, with date and guest validation
 - **Account:** a profile page with order, booking, cart, and bank account activity
 - **Authentication:** registration, login, logout, hashed passwords, JWT, and CUSTOMER and ADMIN roles on protected pages and endpoints. Each login opens one module (E-commerce, Banking, Travel & Cruise, or Admin), and the pages and API refuse the others
+- **Banking:** online account opening, peso accounts, time deposits, and personal loans with full applicant details, address history, interview questions, an optional guarantor, a rule-based credit check, availment, and instalment payments
 - **API:** versioned endpoints under `/api/v1/`, input validation, consistent status codes and errors, pagination, and Swagger documentation
 - **Automation support:** stable `data-testid` attributes, accessible labels, predictable test accounts, deterministic seed data, seed and reset scripts, and a health-check endpoint
 

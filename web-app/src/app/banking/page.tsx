@@ -10,7 +10,7 @@ import { listAccounts, recentTransactions } from "@/lib/services/bank";
 
 export const metadata: Metadata = { title: "Banking" };
 
-const CREDIT_TYPES = new Set(["DEPOSIT", "TRANSFER_IN"]);
+const CREDIT_TYPES = new Set(["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT"]);
 
 export default async function BankingPage() {
   const user = await requirePageUser("/banking");
@@ -46,11 +46,12 @@ export default async function BankingPage() {
           </div>
         </section>
 
-        <nav aria-label="Banking actions" className="relative -mt-14 grid grid-cols-4 gap-2 sm:gap-4" data-testid="banking-quick-actions">
+        <nav aria-label="Banking actions" className="relative -mt-14 grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-4" data-testid="banking-quick-actions">
           <QuickAction href="/banking/transfer" label="Transfer" icon={icons.transfer} testId="banking-transfer-link" />
           <QuickAction href="/banking/deposit" label="Deposit" icon={icons.deposit} testId="banking-deposit-link" />
           <QuickAction href="/banking/withdraw" label="Withdraw" icon={icons.withdraw} testId="banking-withdraw-link" />
           <QuickAction href="/banking/accounts/new" label="Open account" icon={icons.open} testId="banking-open-account-link" />
+          <QuickAction href="/banking/loans" label="Loans" icon={icons.loan} testId="banking-loans-link" />
         </nav>
 
         <section aria-labelledby="accounts-heading">

@@ -71,6 +71,7 @@ Other shared patterns:
 | Banking dashboard and accounts | `/banking`, `/banking/accounts/<account id>` |
 | Open an account (new customers, no login) | `/banking/open` |
 | Open another account (signed in) | `/banking/accounts/new` |
+| Loans, loan application, decision, and loan | `/banking/loans`, `/banking/loans/apply`, `/banking/loans/applications/<id>`, `/banking/loans/<id>` |
 
 ## Behaviour to plan for
 
@@ -86,6 +87,7 @@ Other shared patterns:
 - **Simulated dates** in the seed data are fixed in 2030 and 2024, so scenarios do not expire.
 - **Photos** are ordinary `<img>` elements inside a box with a `-image` test id, such as `product-image-prod_0001`. A record without a photo shows a drawn placeholder with a `-image-placeholder` id instead, such as `product-image-placeholder-prod_0002` after an admin clears that product's image URL. Photos below the fold load lazily, so scroll to them before checking that they loaded.
 - **Account application:** `/banking/open` is a 9-step form. Each step is checked when you press `application-continue-button`, and errors use the usual `-error` ids. On step 2, press `app-send-otp-button`, enter `123456` in `app-otp-input`, then press `app-verify-otp-button` before continuing. On step 6, press `app-selfie-button`. After submitting, `application-success` shows the new account number, and the browser is signed in to Banking.
+- **Loan application:** `/banking/loans/apply` is a 7-step form. Press `loan-continue-button` on each step. The previous-address fields appear only when years at the current address is under 2. Yes-or-no questions are radio pairs, such as `loan-missed-payments-yes` and `loan-missed-payments-no`. On step 6, choose `loan-borrower-type-radio-primary` or `loan-borrower-type-radio-guarantor`. Submitting opens the decision page.
 - **Hidden balances:** `balance-toggle` on the banking dashboard hides balances as `₱ ••••••`. Balances show by default. Account cards show only the last four digits of the account number. The account page shows the full number.
 - **Repeated amounts:** an identical bank transaction within 30 seconds is rejected. See the [API guide](api-guide.md#duplicate-transaction-prevention).
 
@@ -401,6 +403,7 @@ banking
 banking-deposit-link
 banking-empty-state
 banking-hero
+banking-loans-link
 banking-open-account-link
 banking-quick-actions
 banking-recent
@@ -410,6 +413,130 @@ banking-total-balance
 banking-transfer-link
 banking-withdraw-link
 deposit
+loan-accept-account
+loan-accept-button
+loan-accept-disclosure
+loan-accept-error
+loan-accept-form
+loan-amount
+loan-application-error
+loan-application-form
+loan-application-row-<id>
+loan-application-status-<id>
+loan-applications-empty
+loan-applications-table
+loan-apply
+loan-apply-back-link
+loan-apply-open-offer
+loan-back-button
+loan-back-link
+loan-birth-date
+loan-borrower-type
+loan-borrower-type-error
+loan-borrower-type-guarantor
+loan-borrower-type-primary
+loan-borrower-type-radio-guarantor
+loan-borrower-type-radio-primary
+loan-card-<id>
+loan-civil-status
+loan-consent-credit-check
+loan-consent-privacy
+loan-consent-truthful
+loan-continue-button
+loan-credit-check
+loan-credit-dti
+loan-credit-reasons
+loan-credit-score
+loan-current-address-line
+loan-current-barangay
+loan-current-city
+loan-current-postal-code
+loan-current-province
+loan-decision
+loan-decision-availed
+loan-decision-back-link
+loan-decision-cancelled
+loan-decision-declined
+loan-decision-loan-link
+loan-decision-offered
+loan-decision-status
+loan-decline-button
+loan-dependents
+loan-disclosure
+loan-employer-name
+loan-employment-months
+loan-employment-type
+loan-estimate
+loan-estimate-instalment
+loan-estimate-interest
+loan-estimate-net
+loan-first-name
+loan-g-<field>
+loan-g-current-<field>
+loan-g-previous-<field>
+loan-g-previous-address
+loan-guarantor
+loan-id-number
+loan-id-type
+loan-instalment
+loan-instalment-<n>
+loan-instalment-status-<n>
+loan-last-name
+loan-legal-issues
+loan-list
+loan-middle-name
+loan-missed-payments
+loan-mobile
+loan-monthly-expenses
+loan-monthly-income
+loan-next-due
+loan-offer-amount
+loan-offer-instalment
+loan-offer-interest
+loan-offer-net
+loan-offer-total
+loan-other-bank-loans
+loan-other-payments
+loan-outstanding
+loan-outstanding-<id>
+loan-paid-count
+loan-paid-off-notice
+loan-payment-account
+loan-payment-error
+loan-payment-form
+loan-payment-reference
+loan-payment-submit-button
+loan-payment-success
+loan-position
+loan-previous-address
+loan-previous-address-line
+loan-previous-barangay
+loan-previous-city
+loan-previous-error
+loan-previous-postal-code
+loan-previous-province
+loan-progress
+loan-progress-<n>
+loan-purpose
+loan-purpose-details
+loan-released-notice
+loan-repayment-source
+loan-residence-type
+loan-review
+loan-review-borrower-type
+loan-review-loan
+loan-schedule
+loan-status
+loan-status-<id>
+loan-step-title
+loan-suffix
+loan-summary
+loan-term
+loan-years-at-address
+loans
+loans-apply-link
+loans-back-link
+loans-empty-state
 open-account
 open-account-back-link
 open-account-deposit

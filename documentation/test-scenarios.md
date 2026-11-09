@@ -143,6 +143,36 @@ Money endpoints need an `Idempotency-Key` header. The UI sends one automatically
 | OPEN-17 | Negative | P2 | Open Everyday Checking with ₱4,999.00 | 422 `BELOW_MINIMUM_DEPOSIT` |
 | OPEN-18 | Negative | P2 | Fund a new account from frozen `1000000004` as Bob | 422 `ACCOUNT_FROZEN` |
 
+### Loans
+
+| ID | Type | Priority | Scenario | Expected result |
+| --- | --- | --- | --- | --- |
+| LOAN-01 | Positive | P1 | Enter ₱100,000.00 over 12 months on step 1 | Estimate: ₱9,533.33 a month, ₱14,400.00 interest, ₱98,500.00 received |
+| LOAN-02 | Negative | P2 | Enter ₱19,999.00 or ₱500,000.01 | Amount error |
+| LOAN-03 | Positive | P2 | As a customer who opened an account online, start an application | Name, birth date, mobile, ID, address, and employer are filled in |
+| LOAN-04 | Negative | P1 | Enter 1 year at the current address and no previous address | "Add your previous address" error |
+| LOAN-05 | Positive | P2 | Enter 2 or more years at the current address | No previous-address fields |
+| LOAN-06 | Negative | P1 | Leave an interview question unanswered | "Answer: ..." error under that question |
+| LOAN-07 | Negative | P1 | Choose With a guarantor and leave the guarantor details empty | An error on each required guarantor field |
+| LOAN-08 | Negative | P2 | Give the guarantor the borrower's mobile number | "The guarantor needs their own mobile number." |
+| LOAN-09 | Negative | P2 | Guarantor with under 2 years at their address and no previous address | Previous-address error for the guarantor |
+| LOAN-10 | Negative | P1 | Submit without the three consents | An error under each consent |
+| LOAN-11 | Positive | P1 | Apply for ₱100,000.00 over 12 months, income ₱80,000.00, primary borrower only | OFFERED in full, score 95, with reasons |
+| LOAN-12 | Positive | P1 | Apply for ₱300,000.00 over 12 months, income ₱40,000.00 | Counter-offer of ₱167,000.00 |
+| LOAN-13 | Negative | P1 | Answer Yes to missed payments, primary borrower only | DECLINED, "no guarantor" reason |
+| LOAN-14 | Positive | P1 | Same as LOAN-13 with a guarantor earning ₱60,000.00 | OFFERED, and the guarantor is shown |
+| LOAN-15 | Negative | P2 | Apply with income ₱12,000.00, or with a pending court case | DECLINED |
+| LOAN-16 | Negative | P2 | Apply again while an offer waits | Notice on the form, API 409 `OPEN_LOAN_OFFER` |
+| LOAN-17 | Negative | P1 | Accept without ticking the disclosure | "Accept the disclosure statement..." error |
+| LOAN-18 | Positive | P1 | Accept an offer into checking | Loan is ACTIVE, checking rises by the amount less ₱1,500.00, history shows a LOAN_DISBURSEMENT |
+| LOAN-19 | Positive | P2 | Decline an offer | Status CANCELLED, and a new application is allowed |
+| LOAN-20 | Negative | P2 | Accept or decline the same offer again | 409 `OFFER_NOT_OPEN` |
+| LOAN-21 | Positive | P1 | Pay the next instalment | Instalment 1 PAID, outstanding drops, history shows a LOAN_PAYMENT |
+| LOAN-22 | Positive | P1 | Pay every instalment of a 6-month loan | Loan PAID_OFF, outstanding ₱0.00, no pay form |
+| LOAN-23 | Negative | P1 | Pay from an account without enough money | 422 `INSUFFICIENT_FUNDS`, nothing changes |
+| LOAN-24 | Negative | P1 | Open another customer's application or loan | 403 `FORBIDDEN` |
+| LOAN-25 | Positive | P2 | Take a second loan while the first is active | A higher debt-to-income figure, which can turn into a counter-offer |
+
 ## Travel
 
 Hotel search is at `/travel/hotels`. Old `/travel?destination=...` links redirect there.

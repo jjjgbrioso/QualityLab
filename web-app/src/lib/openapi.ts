@@ -3,6 +3,7 @@ import { moduleForApi } from "@/lib/modules";
 import { loginSchema, registerSchema } from "@/lib/validation/auth";
 import { cashTransactionSchema, transferSchema } from "@/lib/validation/bank";
 import { bankApplicationSchema, openAccountSchema, otpVerifySchema } from "@/lib/validation/bank-onboarding";
+import { acceptOfferSchema, loanApplicationSchema, loanPaymentSchema } from "@/lib/validation/loans";
 import {
   addCartItemSchema,
   checkoutSchema,
@@ -288,6 +289,66 @@ const schemas: Record<string, Json> = {
     ratesBps: { type: "object", additionalProperties: { type: "integer" }, description: "Annual rate by term in months; 0 for no term" },
     forNewCustomers: "boolean",
   }),
+  LoanQuote: properties({
+    amountCents: "integer",
+    termMonths: "integer",
+    monthlyRateBps: { type: "integer", description: "Monthly add-on rate in basis points: 120 is 1.20%" },
+    totalInterestCents: "integer",
+    totalPayableCents: "integer",
+    monthlyInstalmentCents: "integer",
+    processingFeeCents: "integer",
+    netProceedsCents: { type: "integer", description: "Amount released after the processing fee" },
+  }),
+  LoanApplication: properties({
+    id: "string",
+    referenceNumber: "string",
+    status: { type: "string", enum: ["OFFERED", "DECLINED", "AVAILED", "CANCELLED"] },
+    requestedAmountCents: "integer",
+    termMonths: "integer",
+    purpose: "string",
+    creditScore: { type: "integer", description: "0 to 100. 50 or more is needed for an offer" },
+    debtToIncomePercent: "integer",
+    decisionReasons: { type: "array", items: { type: "string" } },
+    offeredAmountCents: { type: ["integer", "null"] },
+    counterOffer: "boolean",
+    offer: { oneOf: [ref("LoanQuote"), { type: "null" }] },
+    withGuarantor: "boolean",
+    guarantorName: { type: ["string", "null"] },
+    guarantorRelationship: { type: ["string", "null"] },
+    loanId: { type: ["string", "null"] },
+    createdAt: dateTime,
+    closedAt: { type: ["string", "null"], format: "date-time" },
+  }),
+  LoanInstalment: properties({
+    number: "integer",
+    dueDate: { type: "string", format: "date" },
+    principalCents: "integer",
+    interestCents: "integer",
+    amountCents: "integer",
+    status: { type: "string", enum: ["PAID", "UNPAID", "OVERDUE"] },
+    paidAt: { type: ["string", "null"], format: "date-time" },
+    paymentReference: { type: ["string", "null"] },
+  }),
+  Loan: properties({
+    id: "string",
+    loanNumber: "string",
+    applicationId: "string",
+    status: { type: "string", enum: ["ACTIVE", "PAID_OFF"] },
+    principalCents: "integer",
+    termMonths: "integer",
+    monthlyRateBps: "integer",
+    processingFeeCents: "integer",
+    netProceedsCents: "integer",
+    monthlyInstalmentCents: "integer",
+    totalPayableCents: "integer",
+    outstandingCents: "integer",
+    disbursementAccountId: "string",
+    releasedOn: { type: "string", format: "date" },
+    paidOffAt: { type: ["string", "null"], format: "date-time" },
+    instalmentsPaid: "integer",
+    nextInstalment: { oneOf: [ref("LoanInstalment"), { type: "null" }] },
+    instalments: { type: "array", items: ref("LoanInstalment") },
+  }),
   BankApplicationResult: properties({
     applicationNumber: "string",
     user: ref("User"),
@@ -297,7 +358,7 @@ const schemas: Record<string, Json> = {
     id: "string",
     reference: "string",
     accountId: "string",
-    type: { type: "string", enum: ["DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT"] },
+    type: { type: "string", enum: ["DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT", "LOAN_DISBURSEMENT", "LOAN_PAYMENT"] },
     amountCents: "integer",
     balanceAfterCents: "integer",
     counterparty: nullable("string"),
@@ -638,6 +699,99 @@ const paths: Record<string, Record<string, Json>> = {
       errors: [403, 404, 409, 422],
     }),
   },
+  "/api/v1/bank/loans": {
+    get: operation({
+      tag: "Loans",
+      summary: "My loan applications and loans",
+      auth: true,
+      schema: properties({ applications: { type: "array", items: ref("LoanApplication") }, loans: { type: "array", items: ref("Loan") } }),
+    }),
+  },
+  "/api/v1/bank/loans/quote": {
+    get: operation({
+      tag: "Loans",
+      summary: "Loan calculator",
+      description: "Public. A 1.20% monthly add-on rate and a PHP 1,500.00 processing fee.",
+      parameters: [
+        query("amountCents", { type: "integer", minimum: 2000000, maximum: 50000000 }, "Loan amount in centavos"),
+        query("termMonths", { type: "integer", enum: [6, 12, 18, 24, 36] }, "Term in months"),
+      ],
+      schema: ref("LoanQuote"),
+    }),
+  },
+  "/api/v1/bank/loans/applications": {
+    post: operation({
+      tag: "Loans",
+      summary: "Apply for a personal loan",
+      description:
+        "Runs the credit check at once and returns OFFERED (in full, or a smaller counter-offer) or DECLINED, with reasons. A previous address is required when yearsAtAddress is under 2, for the borrower and for a guarantor. withGuarantor true needs guarantor details. Returns 409 OPEN_LOAN_OFFER while another offer is waiting.",
+      auth: true,
+      body: loanApplicationSchema,
+      status: 201,
+      schema: ref("LoanApplication"),
+      errors: [409],
+    }),
+  },
+  "/api/v1/bank/loans/applications/{id}": {
+    get: operation({
+      tag: "Loans",
+      summary: "Loan application and decision",
+      auth: true,
+      parameters: [pathParam("id", "clx0000000000000000000000")],
+      schema: ref("LoanApplication"),
+      errors: [403, 404],
+    }),
+  },
+  "/api/v1/bank/loans/applications/{id}/accept": {
+    post: operation({
+      tag: "Loans",
+      summary: "Accept the offer (availment)",
+      description:
+        "Creates the loan and its schedule, and releases the amount less the processing fee into the chosen account. Time deposits cannot receive it. Returns 409 OFFER_NOT_OPEN unless the application is OFFERED.",
+      auth: true,
+      parameters: [pathParam("id", "clx0000000000000000000000"), idempotencyHeader],
+      body: acceptOfferSchema,
+      status: 201,
+      schema: properties({ loan: ref("Loan"), transaction: ref("BankTransaction") }),
+      headers: replayHeader,
+      errors: [403, 404, 409, 422],
+    }),
+  },
+  "/api/v1/bank/loans/applications/{id}/decline": {
+    post: operation({
+      tag: "Loans",
+      summary: "Decline the offer",
+      auth: true,
+      parameters: [pathParam("id", "clx0000000000000000000000")],
+      schema: ref("LoanApplication"),
+      errors: [403, 404, 409],
+    }),
+  },
+  "/api/v1/bank/loans/{id}": {
+    get: operation({
+      tag: "Loans",
+      summary: "Loan with its repayment schedule",
+      auth: true,
+      parameters: [pathParam("id", "clx0000000000000000000000")],
+      schema: ref("Loan"),
+      errors: [403, 404],
+    }),
+  },
+  "/api/v1/bank/loans/{id}/payments": {
+    post: operation({
+      tag: "Loans",
+      summary: "Pay the next instalment (settlement)",
+      description:
+        "Pays the next unpaid instalment from the account. The last payment marks the loan PAID_OFF. Errors: 422 INSUFFICIENT_FUNDS, ACCOUNT_FROZEN, TIME_DEPOSIT_LOCKED; 409 LOAN_ALREADY_PAID_OFF.",
+      auth: true,
+      parameters: [pathParam("id", "clx0000000000000000000000"), idempotencyHeader],
+      body: loanPaymentSchema,
+      status: 201,
+      schema: properties({ loan: ref("Loan"), transaction: ref("BankTransaction") }),
+      headers: replayHeader,
+      errors: [403, 404, 409, 422],
+    }),
+  },
   "/api/v1/bank/products": {
     get: operation({
       tag: "Banking",
@@ -685,7 +839,7 @@ const paths: Record<string, Record<string, Json>> = {
       auth: true,
       parameters: [
         pathParam("id", "acct_alice_chk"),
-        query("type", { type: "string", enum: ["DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT"] }, "Filter by type"),
+        query("type", { type: "string", enum: ["DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT", "LOAN_DISBURSEMENT", "LOAN_PAYMENT"] }, "Filter by type"),
         ...pageParams,
       ],
       schema: ref("BankTransaction"),
@@ -1033,7 +1187,7 @@ export function openApiDocument() {
         "A demonstration API for QA automation practice. Payments and banking are simulated. Money values are integer cents. Log in with POST /api/v1/auth/login and a module, then use Authorize with the returned token. Each token opens one module.",
     },
     servers: [{ url: "/", description: "This environment" }],
-    tags: ["System", "Auth", "Products", "Cart", "Orders", "Banking", "Travel", "Bookings", "Cruises", "Admin"].map((name) => ({ name })),
+    tags: ["System", "Auth", "Products", "Cart", "Orders", "Banking", "Loans", "Travel", "Bookings", "Cruises", "Admin"].map((name) => ({ name })),
     paths,
     components: {
       securitySchemes: { bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },

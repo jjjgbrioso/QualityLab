@@ -30,7 +30,7 @@ export const idempotencyKeySchema = z
   .string({ error: "The Idempotency-Key header is required." })
   .regex(/^[A-Za-z0-9_-]{8,100}$/, "Idempotency-Key must be 8 to 100 letters, digits, hyphens, or underscores.");
 
-export const BANK_TRANSACTION_TYPES = ["DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT"] as const;
+export const BANK_TRANSACTION_TYPES = ["DEPOSIT", "WITHDRAWAL", "TRANSFER_IN", "TRANSFER_OUT", "LOAN_DISBURSEMENT", "LOAN_PAYMENT"] as const;
 
 export const transactionQuerySchema = z.object({
   type: z.enum(BANK_TRANSACTION_TYPES, { error: "Choose a supported transaction type." }).optional(),

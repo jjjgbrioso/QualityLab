@@ -100,6 +100,10 @@ An error:
 | `ID_VERIFICATION_FAILED` | 422 | The application's ID number ends in `0000` |
 | `BELOW_MINIMUM_DEPOSIT` | 422 | The opening deposit is below the product minimum |
 | `TIME_DEPOSIT_LOCKED` | 422 | A time deposit cannot take deposits, and cannot pay out before it matures |
+| `OPEN_LOAN_OFFER` | 409 | Another loan offer is waiting to be accepted or declined |
+| `OFFER_NOT_OPEN` | 409 | The loan application is not `OFFERED`, so it cannot be accepted or declined |
+| `LOAN_ALREADY_PAID_OFF` | 409 | Every instalment is already paid |
+| `LOAN_APPLICATION_NOT_FOUND`, `LOAN_NOT_FOUND` | 404 | No loan application or loan has this id |
 | `PAYMENT_DECLINED` | 402 | The test card was declined |
 | `PAYMENT_INSUFFICIENT_FUNDS` | 402 | The test card has insufficient funds |
 | `FORBIDDEN` | 403 | Wrong role, or the resource belongs to someone else |
@@ -190,6 +194,23 @@ Admins can set a product's `imageUrl` when creating or updating it. It must be a
 - `POST /api/v1/bank/accounts` opens another account for a signed-in banking customer. It needs an `Idempotency-Key` and moves the opening deposit from `sourceAccountId`. A time deposit needs `termMonths` of 3, 6, or 12.
 
 Bank accounts include `product`, `productName`, `termMonths`, `interestRateBps`, `maturityDate`, and `locked`. A locked time deposit refuses deposits, withdrawals, and transfers with 422 `TIME_DEPOSIT_LOCKED`.
+
+## Personal loans
+
+All loan endpoints except the calculator need a `banking` token.
+
+| Step | Endpoint |
+| --- | --- |
+| Calculator | `GET /api/v1/bank/loans/quote?amountCents=10000000&termMonths=12` |
+| Apply and get the credit decision | `POST /api/v1/bank/loans/applications` |
+| Read the decision | `GET /api/v1/bank/loans/applications/{id}` |
+| Accept the offer (availment) | `POST /api/v1/bank/loans/applications/{id}/accept`, with an `Idempotency-Key` |
+| Decline the offer | `POST /api/v1/bank/loans/applications/{id}/decline` |
+| Read the loan and its schedule | `GET /api/v1/bank/loans/{id}` |
+| Pay the next instalment (settlement) | `POST /api/v1/bank/loans/{id}/payments`, with an `Idempotency-Key` |
+| List everything | `GET /api/v1/bank/loans` |
+
+The application body has `loan`, `borrower`, `addresses` (`current`, and `previous` when `current.yearsAtAddress` is under 2), `employment`, `interview`, `withGuarantor`, `guarantor` (with its own `addresses`), and `consents`. Money fields are in centavos. The decision is returned at once: `OFFERED` (check `counterOffer`) or `DECLINED`, with `creditScore`, `debtToIncomePercent`, and `decisionReasons`.
 
 ## Guest information
 

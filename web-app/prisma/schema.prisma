@@ -54,6 +54,20 @@ enum BankTransactionType {
   WITHDRAWAL
   TRANSFER_IN
   TRANSFER_OUT
+  LOAN_DISBURSEMENT
+  LOAN_PAYMENT
+}
+
+enum LoanApplicationStatus {
+  OFFERED
+  DECLINED
+  AVAILED
+  CANCELLED
+}
+
+enum LoanStatus {
+  ACTIVE
+  PAID_OFF
 }
 
 enum RoomType {
@@ -93,6 +107,81 @@ model User {
   cruiseBookings  CruiseBooking[]
   idempotencyKeys IdempotencyKey[]
   profile         CustomerProfile?
+  loanApplications LoanApplication[]
+  loans            Loan[]
+}
+
+// A personal loan application and its credit check result. The applicant's details are kept as
+// submitted, so the record shows what the decision was based on. All values are fictional.
+model LoanApplication {
+  id                     String                @id @default(cuid())
+  referenceNumber        String                @unique
+  userId                 String
+  status                 LoanApplicationStatus
+  requestedAmountCents   Int
+  termMonths             Int
+  purpose                String
+  borrower               Json
+  addresses              Json
+  employment             Json
+  interview              Json
+  guarantor              Json?
+  creditScore            Int
+  debtToIncomePercent    Int
+  decisionReasons        String[]
+  offeredAmountCents     Int?
+  monthlyRateBps         Int
+  processingFeeCents     Int
+  createdAt              DateTime              @default(now())
+  closedAt               DateTime?
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loan Loan?
+
+  @@index([userId])
+}
+
+model Loan {
+  id                     String     @id @default(cuid())
+  loanNumber             String     @unique
+  applicationId          String     @unique
+  userId                 String
+  status                 LoanStatus @default(ACTIVE)
+  principalCents         Int
+  termMonths             Int
+  monthlyRateBps         Int
+  processingFeeCents     Int
+  netProceedsCents       Int
+  monthlyInstalmentCents Int
+  totalPayableCents      Int
+  outstandingCents       Int
+  disbursementAccountId  String
+  releasedOn             DateTime   @db.Date
+  paidOffAt              DateTime?
+  createdAt              DateTime   @default(now())
+
+  application LoanApplication  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instalments LoanInstalment[]
+
+  @@index([userId])
+}
+
+model LoanInstalment {
+  id                String    @id @default(cuid())
+  loanId            String
+  number            Int
+  dueDate           DateTime  @db.Date
+  principalCents    Int
+  interestCents     Int
+  amountCents       Int
+  paidAt            DateTime?
+  paidFromAccountId String?
+  paymentReference  String?
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, number])
 }
 
 // Know-your-customer details collected by the online account application. All values are

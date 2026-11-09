@@ -74,6 +74,51 @@ The application at `/banking/open` uses fictional data only. It asks for no real
 | Opening deposit | At least the product minimum, at most ₱50,000.00. Simulated, so no payment is taken |
 | Email already registered, such as `alice@qualitylab.test` | 409 `EMAIL_ALREADY_REGISTERED` |
 
+### Personal loans
+
+| Rule | Value |
+| --- | --- |
+| Amount | ₱20,000.00 to ₱500,000.00 |
+| Terms | 6, 12, 18, 24, or 36 months |
+| Rate | 1.20% a month, add-on: interest = amount × 1.2% × months |
+| Instalment | (amount + interest) ÷ months. The last instalment absorbs the rounding |
+| Processing fee | ₱1,500.00, deducted from the amount released |
+| Previous address | Required when the borrower or guarantor has lived at the current address for under 2 years |
+| One open offer | A second application while an offer waits returns 409 `OPEN_LOAN_OFFER` |
+
+Example: ₱100,000.00 over 12 months has ₱14,400.00 interest, ₱114,400.00 to repay, instalments of ₱9,533.33 (the last is ₱9,533.37), and ₱98,500.00 released.
+
+#### Credit check
+
+The check is rule based, so the same answers always give the same result. No credit bureau is used.
+
+| Rule | Effect |
+| --- | --- |
+| Age under 21, or over 65 when the loan ends | Declined |
+| Gross monthly income under ₱15,000.00 | Declined |
+| Pending court case or bankruptcy | Declined |
+| Missed payments in the last 12 months, with no guarantor | Declined |
+| Score starts at 50 | |
+| Loan payments 30% of income or less / 40% or less | +20 / +10 |
+| 24 months or more at the job / 12 to 23 months / under 6 months | +15 / +8 / -10 |
+| Missed payments (with a guarantor) | -20 |
+| Owns home / mortgaged | +5 / +3 |
+| Four or more dependents | -5 |
+| ₱10,000.00 or more in QualityLab Bank accounts | +5 |
+| Guarantor earning ₱20,000.00 or more with no missed payments / guarantor with missed payments | +10 / -5 |
+| Score under 50 | Declined |
+| Payments over 40% of income | Counter-offer: the largest amount, in ₱1,000.00 steps, that fits 40%. Declined if that is under ₱20,000.00 |
+
+"Payments" include the new instalment, other loans and cards, and the borrower's active QualityLab Bank loans.
+
+| Recipe (as Alice, owns home, 36 months at job, 1 dependent) | Result |
+| --- | --- |
+| ₱100,000.00 over 12 months, income ₱80,000.00 | Offered in full, score 95 |
+| ₱300,000.00 over 12 months, income ₱40,000.00 | Counter-offer of ₱167,000.00 |
+| Missed payments: Yes, primary borrower only | Declined |
+| Missed payments: Yes, with a guarantor earning ₱60,000.00 | Offered |
+| Income ₱12,000.00 | Declined |
+
 Example applicant: Maria Santos, born 1995-06-15 in Quezon City, 12 Mabini St, Barangay San Isidro, Makati, Metro Manila 1234, employed at Sample Corp, National ID `1234-5678-9012`. The application creates a login with the applicant's email and password, so the applicant can then sign in to Banking.
 
 ## Products

@@ -109,6 +109,10 @@ const STATUS_TONES: Record<string, keyof typeof BADGE_TONES> = {
   DISABLED: "danger",
   ADMIN: "info",
   CUSTOMER: "neutral",
+  OFFERED: "success",
+  DECLINED: "danger",
+  AVAILED: "info",
+  PAID_OFF: "success",
 };
 
 export function StatusBadge({ status, testId }: { status: string; testId?: string }) {

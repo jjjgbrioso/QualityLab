@@ -38,6 +38,9 @@ const BASELINE_DATE = new Date("2026-01-01T00:00:00.000Z");
 
 /** Tables are listed so a new model has to be added here on purpose. */
 const TABLES = [
+  "LoanInstalment",
+  "Loan",
+  "LoanApplication",
   "CustomerProfile",
   "IdempotencyKey",
   "RevokedToken",

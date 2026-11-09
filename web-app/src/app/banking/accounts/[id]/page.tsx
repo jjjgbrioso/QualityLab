@@ -14,7 +14,7 @@ import { BANK_TRANSACTION_TYPES, transactionQuerySchema } from "@/lib/validation
 
 export const metadata: Metadata = { title: "Account" };
 
-const CREDIT_TYPES = new Set(["DEPOSIT", "TRANSFER_IN"]);
+const CREDIT_TYPES = new Set(["DEPOSIT", "TRANSFER_IN", "LOAN_DISBURSEMENT"]);
 
 export default async function AccountPage({
   params,

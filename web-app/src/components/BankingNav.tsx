@@ -16,6 +16,9 @@ export function BankingNav() {
       <Link href="/banking/accounts/new" className={bankButtonOutline} data-testid="banking-open-account-link">
         Open account
       </Link>
+      <Link href="/banking/loans" className={bankButtonOutline} data-testid="banking-loans-link">
+        Loans
+      </Link>
     </>
   );
 }
