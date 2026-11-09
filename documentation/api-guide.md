@@ -1,6 +1,6 @@
 # API guide
 
-The interactive reference is at `/api-docs`, and the raw OpenAPI 3.1 document is at `/api/v1/openapi.json`. This guide covers the conventions that apply to every endpoint.
+The interactive reference is at `/api-docs`, which needs a sign-in to any module. The raw OpenAPI 3.1 document at `/api/v1/openapi.json` and the health check at `/api/v1/health` need no sign-in, so API tools and monitors can use them. This guide covers the conventions that apply to every endpoint.
 
 ## Authentication
 

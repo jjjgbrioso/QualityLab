@@ -34,14 +34,14 @@ export async function Navbar() {
   const user = await getSessionUser();
   const cartCount = user?.module === "ecommerce" ? await cartItemCount(user.id) : 0;
 
-  // Signed out, every module is offered and each one leads to its login page. There is no Login link.
+  // Signed out, every module is offered and each one leads to its login page. There is no Login link,
+  // and the API docs link appears only after signing in.
   const primary: NavLink[] = user
     ? [{ href: "/", label: "All modules", testId: "nav-link-modules" }, { href: "/api-docs", label: "API Docs", testId: "nav-link-api-docs" }]
     : [
         { href: "/shop", label: "E-commerce", testId: "nav-link-ecommerce" },
         { href: "/banking", label: "Banking", testId: "nav-link-banking" },
         { href: "/travel", label: "Travel & Cruise", testId: "nav-link-travel" },
-        { href: "/api-docs", label: "API Docs", testId: "nav-link-api-docs" },
       ];
   const account = user ? [...moduleLinks(user.module, cartCount), { href: "/account", label: "Account", testId: "nav-link-account" }] : [];
 

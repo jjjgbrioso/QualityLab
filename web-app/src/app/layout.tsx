@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Navbar } from "@/components/Navbar";
+import { getSessionUser } from "@/lib/auth/session";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  // The API docs and health links are for signed-in testers, so visitors start from the modules.
+  const signedIn = Boolean(await getSessionUser());
   return (
     <html lang="en">
       <body className="flex min-h-screen flex-col antialiased">
@@ -36,14 +39,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 with, endorsed by, or associated with any company or brand.
               </p>
             </div>
-            <span className="flex shrink-0 gap-4">
-              <Link href="/api-docs" className="hover:underline" data-testid="footer-link-api-docs">
-                API Docs
-              </Link>
-              <Link href="/api/v1/health" prefetch={false} className="hover:underline" data-testid="footer-link-health">
-                Health
-              </Link>
-            </span>
+            {signedIn ? (
+              <span className="flex shrink-0 gap-4">
+                <Link href="/api-docs" className="hover:underline" data-testid="footer-link-api-docs">
+                  API Docs
+                </Link>
+                <Link href="/api/v1/health" prefetch={false} className="hover:underline" data-testid="footer-link-health">
+                  Health
+                </Link>
+              </span>
+            ) : null}
           </div>
         </footer>
       </body>

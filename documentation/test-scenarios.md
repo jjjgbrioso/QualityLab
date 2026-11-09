@@ -23,7 +23,10 @@ Priority: P1 is critical, P2 is important, and P3 is useful coverage.
 | AUTH-13 | Negative | P1 | Open `/admin` and sign in as a customer | Login page for Admin, then 403 `MODULE_NOT_ALLOWED`: only admin accounts can sign in |
 | AUTH-14 | Negative | P1 | Open `/login?next=https://example.com`, then log in | User stays on this site |
 | AUTH-15 | Positive | P2 | Open `/shop?category=Books` while signed out, then log in | Returns to the shop with the Books filter still applied |
-| AUTH-16 | Positive | P3 | Open the home page, API docs, login, and registration while signed out | All load without a login |
+| AUTH-16 | Positive | P3 | Open the home page, login, and registration while signed out | All load without a login. No API Docs or Health link is shown |
+| AUTH-17 | Negative | P2 | Open `/api-docs` while signed out | Login page with a module select, then the API docs after login |
+| AUTH-18 | Positive | P3 | Sign in to any module | API Docs appears in the navigation, and API Docs and Health appear in the footer |
+| AUTH-19 | Positive | P2 | Call `/api/v1/health` and `/api/v1/openapi.json` without a token | Both return 200 |
 | MOD-01 | Positive | P1 | Choose Banking on the home page and sign in | Banking opens. The navigation shows only Banking, Account, All modules, and API Docs |
 | MOD-02 | Negative | P1 | Signed in to Banking, open `/shop` | Login page titled "Sign in to E-commerce" with `login-switch-notice` |
 | MOD-03 | Positive | P1 | Signed in to Banking, go home, choose E-commerce, and sign in | The shop opens. `/banking` now goes to the login page |

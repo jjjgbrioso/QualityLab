@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { buttonStyles, Card } from "@/components/ui";
+import { getSessionUser } from "@/lib/auth/session";
 
 const MODULES = [
   {
@@ -37,7 +38,8 @@ const FEATURES = [
   "Health-check endpoint for pipelines and monitors",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const signedIn = Boolean(await getSessionUser());
   return (
     <div className="space-y-10">
       <section className="py-6" data-testid="home-hero">
@@ -52,9 +54,11 @@ export default function HomePage() {
           <Link href="/shop" className={buttonStyles.primary} data-testid="home-cta-explore">
             Explore the shop
           </Link>
-          <Link href="/api-docs" className={buttonStyles.secondary} data-testid="home-cta-api-docs">
-            View API docs
-          </Link>
+          {signedIn ? (
+            <Link href="/api-docs" className={buttonStyles.secondary} data-testid="home-cta-api-docs">
+              View API docs
+            </Link>
+          ) : null}
         </div>
       </section>
 
