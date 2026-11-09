@@ -12,6 +12,15 @@ export const parseDateOnly = (value: string) => new Date(`${value}T00:00:00.000Z
 export const formatDateOnly = (date: Date) => date.toISOString().slice(0, 10);
 export const todayUtc = () => new Date().toISOString().slice(0, 10);
 
+/** Adds calendar months, keeping the day where it exists: 2030-01-31 plus 1 month is 2030-02-28. */
+export function addMonths(value: string, months: number): string {
+  const [year, month, day] = value.split("-").map(Number);
+  const target = new Date(Date.UTC(year, month - 1 + months, 1));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(day, lastDay));
+  return target.toISOString().slice(0, 10);
+}
+
 export function addDays(value: string, days: number): string {
   return formatDateOnly(new Date(parseDateOnly(value).getTime() + days * DAY_MS));
 }

@@ -4,7 +4,10 @@ import { BankingNav } from "@/components/BankingNav";
 import { Alert, buttonStyles, Card, EmptyState, inputStyles, linkStyles, PageHeader, Pagination, StatusBadge } from "@/components/ui";
 import { requirePageUser } from "@/lib/auth/session";
 import { formatDisplayDateTime } from "@/lib/dates";
-import { formatCents } from "@/lib/money";
+import { ACCOUNT_TYPE_LABELS } from "@/components/bank";
+import { formatRate } from "@/lib/bank-products";
+import { formatDisplayDate } from "@/lib/dates";
+import { formatPeso as formatCents } from "@/lib/money";
 import { loadForPage, parsePageQuery, type SearchParams } from "@/lib/page-helpers";
 import { getAccount, listTransactions } from "@/lib/services/bank";
 import { BANK_TRANSACTION_TYPES, transactionQuerySchema } from "@/lib/validation/bank";
@@ -22,7 +25,8 @@ export default async function AccountPage({
 }) {
   const { id } = await params;
   const user = await requirePageUser(`/banking/accounts/${id}`);
-  const { query, errors } = parsePageQuery(await searchParams, transactionQuerySchema);
+  const raw = await searchParams;
+  const { query, errors } = parsePageQuery(raw, transactionQuerySchema);
   const [account, { items, meta }] = await loadForPage(() =>
     Promise.all([getAccount(user, id), listTransactions(user, id, query)]),
   );
@@ -35,11 +39,19 @@ export default async function AccountPage({
       <div className="mt-4">
         <PageHeader
           title={account.name}
-          description={`${account.type} · ${account.accountNumber}`}
+          description={`${ACCOUNT_TYPE_LABELS[account.type] ?? account.type} · ${account.accountNumber}`}
           actions={<BankingNav />}
           testId="account"
         />
       </div>
+
+      {raw.opened === "1" ? (
+        <div className="mb-4">
+          <Alert tone="success" testId="account-opened-notice">
+            Your new account is open. Account number {account.accountNumber}.
+          </Alert>
+        </div>
+      ) : null}
 
       <Card className="mb-6 flex items-center justify-between p-5">
         <div>
@@ -50,6 +62,17 @@ export default async function AccountPage({
         </div>
         <StatusBadge status={account.status} testId="account-status" />
       </Card>
+
+      {account.type === "TIME_DEPOSIT" && account.maturityDate ? (
+        <div className="mb-6">
+          <Alert tone={account.locked ? "warning" : "success"} testId="account-maturity-notice">
+            {account.termMonths}-month time deposit at {formatRate(account.interestRateBps ?? 0)}.{" "}
+            {account.locked
+              ? `The money is locked until ${formatDisplayDate(account.maturityDate)}, so it cannot be withdrawn or transferred before then.`
+              : `It matured on ${formatDisplayDate(account.maturityDate)} and can now be withdrawn.`}
+          </Alert>
+        </div>
+      ) : null}
 
       <form method="get" className="mb-4 flex flex-wrap items-end gap-3" data-testid="transaction-filter-form">
         <div>

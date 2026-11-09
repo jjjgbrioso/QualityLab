@@ -3,7 +3,10 @@ import { ApiError, forbidden, notFound } from "@/lib/api/errors";
 import { pageMeta, pageSkip } from "@/lib/api/pagination";
 import { duplicateWindowSeconds } from "@/lib/env";
 import { reference } from "@/lib/ids";
-import { formatCents } from "@/lib/money";
+import { BANK_PRODUCTS, type BankProductCode } from "@/lib/bank-products";
+import { addMonths, formatDateOnly, formatDisplayDate, parseDateOnly, todayUtc } from "@/lib/dates";
+import { newAccountNumber } from "@/lib/ids";
+import { formatPeso as formatCents } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { withIdempotency } from "@/lib/services/idempotency";
 import {
@@ -12,19 +15,34 @@ import {
   type TransactionQuery,
   type TransferInput,
 } from "@/lib/validation/bank";
+import type { OpenAccountInput } from "@/lib/validation/bank-onboarding";
 
 type Actor = { id: string; role: string };
 type Tx = Prisma.TransactionClient;
 
+/** A time deposit is locked until its maturity date. */
+function lockedUntil(account: BankAccount): string | null {
+  if (account.type !== "TIME_DEPOSIT" || !account.maturityDate) return null;
+  const maturity = formatDateOnly(account.maturityDate);
+  return maturity > todayUtc() ? maturity : null;
+}
+
 export function toAccountDto(account: BankAccount) {
+  const product = account.product ? BANK_PRODUCTS[account.product as BankProductCode] : undefined;
   return {
     id: account.id,
     accountNumber: account.accountNumber,
     name: account.name,
     type: account.type,
+    product: account.product,
+    productName: product?.name ?? null,
     status: account.status,
     currency: account.currency,
     balanceCents: account.balanceCents,
+    termMonths: account.termMonths,
+    interestRateBps: account.interestRateBps,
+    maturityDate: account.maturityDate ? formatDateOnly(account.maturityDate) : null,
+    locked: lockedUntil(account) !== null,
     createdAt: account.createdAt.toISOString(),
   };
 }
@@ -104,6 +122,20 @@ function assertActive(account: BankAccount) {
   }
 }
 
+/** Time deposits take no deposits, and pay out only from the maturity date. */
+function assertNotTimeDepositInflow(account: BankAccount) {
+  if (account.type === "TIME_DEPOSIT") {
+    throw new ApiError(422, "TIME_DEPOSIT_LOCKED", `Account ${account.accountNumber} is a time deposit and cannot receive money.`);
+  }
+}
+
+function assertNotLocked(account: BankAccount) {
+  const until = lockedUntil(account);
+  if (until) {
+    throw new ApiError(422, "TIME_DEPOSIT_LOCKED", `Time deposit ${account.accountNumber} is locked until ${formatDisplayDate(until)}.`);
+  }
+}
+
 function assertWithinLimit(amountCents: number) {
   if (amountCents > MAX_TRANSACTION_CENTS) {
     throw new ApiError(422, "LIMIT_EXCEEDED", `A single transaction can be at most ${formatCents(MAX_TRANSACTION_CENTS)}.`, [
@@ -157,6 +189,7 @@ export function deposit({ actor, idempotencyKey }: Idempotent, input: CashTransa
       await ownedAccount(actor, input.accountId, tx);
       const account = (await lockAccounts(tx, [input.accountId])).get(input.accountId)!;
       assertActive(account);
+      assertNotTimeDepositInflow(account);
       assertWithinLimit(input.amountCents);
       await assertNotDuplicate(tx, account.id, "DEPOSIT", input.amountCents, null);
 
@@ -184,6 +217,7 @@ export function withdraw({ actor, idempotencyKey }: Idempotent, input: CashTrans
       await ownedAccount(actor, input.accountId, tx);
       const account = (await lockAccounts(tx, [input.accountId])).get(input.accountId)!;
       assertActive(account);
+      assertNotLocked(account);
       assertWithinLimit(input.amountCents);
       await assertNotDuplicate(tx, account.id, "WITHDRAWAL", input.amountCents, null);
       assertSufficientFunds(account, input.amountCents);
@@ -227,6 +261,8 @@ export function transfer({ actor, idempotencyKey }: Idempotent, input: TransferI
 
       assertActive(from);
       assertActive(to);
+      assertNotLocked(from);
+      assertNotTimeDepositInflow(to);
       assertWithinLimit(input.amountCents);
       await assertNotDuplicate(tx, from.id, "TRANSFER_OUT", input.amountCents, to.accountNumber);
       assertSufficientFunds(from, input.amountCents);
@@ -260,6 +296,87 @@ export function transfer({ actor, idempotencyKey }: Idempotent, input: TransferI
         },
       });
       return toTransactionDto(outgoing);
+    },
+  );
+}
+
+/** The most recent transactions across all of a user's accounts, for the dashboard. */
+export async function recentTransactions(userId: string, take = 5) {
+  const rows = await prisma.bankTransaction.findMany({
+    where: { account: { userId } },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+    take,
+    include: { account: { select: { name: true, accountNumber: true } } },
+  });
+  return rows.map((row) => ({ ...toTransactionDto(row), accountName: row.account.name, accountNumber: row.account.accountNumber }));
+}
+
+export type RecentTransactionDto = Awaited<ReturnType<typeof recentTransactions>>[number];
+
+export const belowMinimum = (minimum: number) =>
+  new ApiError(422, "BELOW_MINIMUM_DEPOSIT", `The opening deposit for this account is at least ${formatCents(minimum)}.`, [
+    { field: "openingDepositCents", message: `Minimum is ${formatCents(minimum)}.` },
+  ]);
+
+/** Opens another account for a signed-in customer, funded by a transfer from one of their accounts. */
+export function openAccount({ actor, idempotencyKey }: Idempotent, input: OpenAccountInput) {
+  return withIdempotency(
+    { userId: actor.id, key: idempotencyKey, scope: "bank.open-account", payload: input },
+    async (tx) => {
+      const product = BANK_PRODUCTS[input.product];
+      if (input.openingDepositCents < product.minimumOpeningCents) throw belowMinimum(product.minimumOpeningCents);
+
+      await ownedAccount(actor, input.sourceAccountId, tx).catch((error) => {
+        if (error instanceof ApiError && error.status === 404) throw accountNotFound("sourceAccountId");
+        throw error;
+      });
+      const source = (await lockAccounts(tx, [input.sourceAccountId])).get(input.sourceAccountId)!;
+      assertActive(source);
+      assertNotLocked(source);
+      assertWithinLimit(input.openingDepositCents);
+      assertSufficientFunds(source, input.openingDepositCents);
+
+      const term = product.type === "TIME_DEPOSIT" ? input.termMonths! : null;
+      const account = await tx.bankAccount.create({
+        data: {
+          accountNumber: newAccountNumber(),
+          userId: source.userId,
+          name: input.nickname ?? product.name,
+          type: product.type,
+          product: product.code,
+          balanceCents: input.openingDepositCents,
+          termMonths: term,
+          interestRateBps: product.ratesBps[term ?? 0],
+          maturityDate: term ? parseDateOnly(addMonths(todayUtc(), term)) : null,
+        },
+      });
+
+      const shared = reference("OPN");
+      const sourceBalance = source.balanceCents - input.openingDepositCents;
+      await tx.bankAccount.update({ where: { id: source.id }, data: { balanceCents: sourceBalance } });
+      await tx.bankTransaction.create({
+        data: {
+          reference: shared,
+          accountId: account.id,
+          type: "TRANSFER_IN",
+          amountCents: input.openingDepositCents,
+          balanceAfterCents: input.openingDepositCents,
+          counterparty: source.accountNumber,
+          description: "Opening deposit",
+        },
+      });
+      const outgoing = await tx.bankTransaction.create({
+        data: {
+          reference: shared,
+          accountId: source.id,
+          type: "TRANSFER_OUT",
+          amountCents: input.openingDepositCents,
+          balanceAfterCents: sourceBalance,
+          counterparty: account.accountNumber,
+          description: `Opening deposit for ${account.name}`,
+        },
+      });
+      return { account: toAccountDto(account), transaction: toTransactionDto(outgoing) };
     },
   );
 }

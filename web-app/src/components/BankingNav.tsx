@@ -1,17 +1,20 @@
 import Link from "next/link";
-import { buttonStyles } from "@/components/ui";
+import { bankButton, bankButtonOutline } from "@/components/bank";
 
 export function BankingNav() {
   return (
     <>
-      <Link href="/banking/transfer" className={buttonStyles.primary} data-testid="banking-transfer-link">
+      <Link href="/banking/transfer" className={bankButton} data-testid="banking-transfer-link">
         Transfer
       </Link>
-      <Link href="/banking/deposit" className={buttonStyles.secondary} data-testid="banking-deposit-link">
+      <Link href="/banking/deposit" className={bankButtonOutline} data-testid="banking-deposit-link">
         Deposit
       </Link>
-      <Link href="/banking/withdraw" className={buttonStyles.secondary} data-testid="banking-withdraw-link">
+      <Link href="/banking/withdraw" className={bankButtonOutline} data-testid="banking-withdraw-link">
         Withdraw
+      </Link>
+      <Link href="/banking/accounts/new" className={bankButtonOutline} data-testid="banking-open-account-link">
+        Open account
       </Link>
     </>
   );

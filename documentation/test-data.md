@@ -36,15 +36,45 @@ Only these numbers are accepted. Any other valid card number returns 400 `TEST_C
 
 | Id | Number | Owner | Type | Status | Balance |
 | --- | --- | --- | --- | --- | --- |
-| `acct_alice_chk` | `1000000001` | Alice | CHECKING | ACTIVE | $2,500.00 |
-| `acct_alice_sav` | `1000000002` | Alice | SAVINGS | ACTIVE | $10,000.00 |
-| `acct_bob_chk` | `1000000003` | Bob | CHECKING | ACTIVE | $750.50 |
-| `acct_bob_frz` | `1000000004` | Bob | SAVINGS | FROZEN | $500.00 |
-| `acct_empty_chk` | `1000000005` | Empty | CHECKING | ACTIVE | $0.00 |
+Banking runs in Philippine pesos. Amounts are stored in centavos, so `250000` is ₱2,500.00.
 
-- The maximum single transaction is $10,000.00.
-- Newly registered users get one checking account with a simulated $1,000.00 opening balance.
-- `9999999999` is a valid format that matches no account.
+| Id | Number | Owner | Type | Product | Status | Balance |
+| --- | --- | --- | --- | --- | --- | --- |
+| `acct_alice_chk` | `1000000001` | Alice | CHECKING | Everyday Checking | ACTIVE | ₱2,500.00 |
+| `acct_alice_sav` | `1000000002` | Alice | SAVINGS | Starter Savings | ACTIVE | ₱10,000.00 |
+| `acct_bob_chk` | `1000000003` | Bob | CHECKING | Everyday Checking | ACTIVE | ₱750.50 |
+| `acct_bob_frz` | `1000000004` | Bob | SAVINGS | Starter Savings | FROZEN | ₱500.00 |
+| `acct_empty_chk` | `1000000005` | Empty | CHECKING | Everyday Checking | ACTIVE | ₱0.00 |
+
+- The maximum single transaction is ₱10,000.00.
+- Users who register through the general Create an account page get one checking account with a simulated ₱1,000.00 opening balance.
+- `9999999999` is a valid format that matches no account. Accounts opened in the app get numbers starting with `2`.
+
+### Bank products
+
+| Code | Name | Type | Opening deposit | Maintaining balance | Rate shown | Online application |
+| --- | --- | --- | --- | --- | --- | --- |
+| `STARTER_SAVINGS` | Starter Savings | SAVINGS | ₱100.00 | None | 0.25% | Yes |
+| `EVERYDAY_CHECKING` | Everyday Checking | CHECKING | ₱5,000.00 | ₱5,000.00 | 0.00% | Yes |
+| `TIME_DEPOSIT` | Time Deposit | TIME_DEPOSIT | ₱10,000.00 | None | 3.00%, 3.25%, or 3.50% for 3, 6, or 12 months | No, signed-in customers only |
+
+Rates are for display. The demo pays no interest. A time deposit refuses deposits, and refuses withdrawals and transfers out until its maturity date.
+
+### Online account application
+
+The application at `/banking/open` uses fictional data only. It asks for no real IDs, photos, or messages.
+
+| Value | Result |
+| --- | --- |
+| One-time PIN `123456` | Accepted. Any other PIN returns 422 `INVALID_OTP` |
+| ID number ending in `0000`, such as `CRN-0111-0000` | 422 `ID_VERIFICATION_FAILED` |
+| Any other ID number of 6 to 20 letters, digits, or hyphens | Verified |
+| Selfie check | The **Simulate selfie check** button. The camera is never used |
+| Mobile number | Philippine mobile, such as `0917 123 4567`. Stored as `+639171234567` |
+| Opening deposit | At least the product minimum, at most ₱50,000.00. Simulated, so no payment is taken |
+| Email already registered, such as `alice@qualitylab.test` | 409 `EMAIL_ALREADY_REGISTERED` |
+
+Example applicant: Maria Santos, born 1995-06-15 in Quezon City, 12 Mabini St, Barangay San Isidro, Makati, Metro Manila 1234, employed at Sample Corp, National ID `1234-5678-9012`. The application creates a login with the applicant's email and password, so the applicant can then sign in to Banking.
 
 ## Products
 

@@ -103,13 +103,13 @@ Money endpoints need an `Idempotency-Key` header. The UI sends one automatically
 | BANK-02 | Positive | P1 | Deposit and withdraw | 201, balance changes, history shows both |
 | BANK-03 | Positive | P1 | Transfer from Alice to `1000000003` | Both balances change, both accounts show the same reference |
 | BANK-04 | Negative | P1 | Withdraw more than the balance | 422 `INSUFFICIENT_FUNDS`, balance unchanged |
-| BANK-05 | Positive | P2 | Withdraw the exact balance | 201, balance is $0.00 |
+| BANK-05 | Positive | P2 | Withdraw the exact balance | 201, balance is ₱0.00 |
 | BANK-06 | Negative | P1 | Transfer to `9999999999` | 404 `ACCOUNT_NOT_FOUND` on `toAccountNumber` |
 | BANK-07 | Negative | P2 | Transfer to a malformed account number | 400 `VALIDATION_ERROR` |
 | BANK-08 | Negative | P2 | Transfer to the same account | 422 `SAME_ACCOUNT_TRANSFER` |
 | BANK-09 | Negative | P2 | Use frozen account `1000000004` | 422 `ACCOUNT_FROZEN` |
 | BANK-10 | Negative | P2 | Use an amount of 0, a negative amount, or fractional cents | 400 `VALIDATION_ERROR` |
-| BANK-11 | Negative | P2 | Use an amount over $10,000.00 | 422 `LIMIT_EXCEEDED` |
+| BANK-11 | Negative | P2 | Use an amount over ₱10,000.00 | 422 `LIMIT_EXCEEDED` |
 | BANK-12 | Negative | P1 | Use Bob's account as Alice | 403 `FORBIDDEN` |
 | BANK-13 | Negative | P1 | Send no `Idempotency-Key` | 400 `INVALID_IDEMPOTENCY_KEY` |
 | BANK-14 | Negative | P1 | Repeat a request with the same key and body | Same 201, `Idempotent-Replayed: true`, money moved once |
@@ -117,6 +117,31 @@ Money endpoints need an `Idempotency-Key` header. The UI sends one automatically
 | BANK-16 | Negative | P1 | Send an identical transaction with a new key within 30 seconds | 409 `DUPLICATE_TRANSACTION` |
 | BANK-17 | Negative | P1 | Send many withdrawals in parallel | Balance never goes below zero |
 | BANK-18 | Positive | P3 | Filter transaction history by type | Only that type is listed |
+| BANK-19 | Positive | P2 | Open the banking dashboard | Peso balances, total, quick actions, account cards ending in the last 4 digits, and recent activity |
+| BANK-20 | Positive | P3 | Press Hide balances, then Show balances | Amounts become `₱ ••••••`, then come back |
+
+### Opening accounts
+
+| ID | Type | Priority | Scenario | Expected result |
+| --- | --- | --- | --- | --- |
+| OPEN-01 | Positive | P1 | Complete the 9-step application with the example applicant | Success page with an account number starting with 2, and the browser is signed in to Banking |
+| OPEN-02 | Negative | P1 | Continue without ticking all four consent boxes | An error under each unticked box |
+| OPEN-03 | Negative | P1 | Verify with PIN `000000` | `INVALID_OTP` under the PIN, and Continue stays blocked |
+| OPEN-04 | Negative | P2 | Enter a mobile number such as `0817123456` | "Enter a Philippine mobile number" error |
+| OPEN-05 | Negative | P1 | Enter a birth date less than 18 years ago | "You must be at least 18 years old." |
+| OPEN-06 | Negative | P2 | Choose Employed with no employer name | Employer name is required |
+| OPEN-07 | Negative | P2 | Choose a passport with no expiry, or an expired one | Expiry date error |
+| OPEN-08 | Negative | P1 | Continue the ID step without the selfie check | "Complete the selfie check." |
+| OPEN-09 | Negative | P1 | Submit with ID number `CRN-0111-0000` | 422 `ID_VERIFICATION_FAILED`, and the form returns to the ID step |
+| OPEN-10 | Negative | P2 | Choose Everyday Checking with a ₱1,000.00 deposit | Error naming the ₱5,000.00 minimum |
+| OPEN-11 | Negative | P2 | Enter an opening deposit over ₱50,000.00 | "Online opening deposits are at most ₱50,000.00." |
+| OPEN-12 | Negative | P1 | Apply with `alice@qualitylab.test` | 409 `EMAIL_ALREADY_REGISTERED`, and the form returns to the contact step |
+| OPEN-13 | Positive | P2 | On the review step, press Edit on a section | That step opens with the earlier answers kept |
+| OPEN-14 | Positive | P1 | As Alice, open Starter Savings with ₱500.00 from `1000000001` | New account, checking drops by ₱500.00, and both sides share one `OPN-` reference |
+| OPEN-15 | Positive | P1 | As Alice, open a 6-month time deposit of ₱10,000.00 from savings | Locked account at 3.25%, with a maturity date 6 months ahead |
+| OPEN-16 | Negative | P1 | Withdraw from, deposit to, or transfer from a locked time deposit | 422 `TIME_DEPOSIT_LOCKED` |
+| OPEN-17 | Negative | P2 | Open Everyday Checking with ₱4,999.00 | 422 `BELOW_MINIMUM_DEPOSIT` |
+| OPEN-18 | Negative | P2 | Fund a new account from frozen `1000000004` as Bob | 422 `ACCOUNT_FROZEN` |
 
 ## Travel
 

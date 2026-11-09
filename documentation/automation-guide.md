@@ -68,6 +68,9 @@ Other shared patterns:
 | Booking history | `/bookings` for hotels, `/bookings?type=cruises` for cruises |
 | Booking details | `/bookings/<booking id>`, `/bookings/cruises/<cruise booking id>` |
 | Account | `/account` |
+| Banking dashboard and accounts | `/banking`, `/banking/accounts/<account id>` |
+| Open an account (new customers, no login) | `/banking/open` |
+| Open another account (signed in) | `/banking/accounts/new` |
 
 ## Behaviour to plan for
 
@@ -82,6 +85,8 @@ Other shared patterns:
 - **Cancel** uses an inline confirmation, not a native browser dialog.
 - **Simulated dates** in the seed data are fixed in 2030 and 2024, so scenarios do not expire.
 - **Photos** are ordinary `<img>` elements inside a box with a `-image` test id, such as `product-image-prod_0001`. A record without a photo shows a drawn placeholder with a `-image-placeholder` id instead, such as `product-image-placeholder-prod_0002` after an admin clears that product's image URL. Photos below the fold load lazily, so scroll to them before checking that they loaded.
+- **Account application:** `/banking/open` is a 9-step form. Each step is checked when you press `application-continue-button`, and errors use the usual `-error` ids. On step 2, press `app-send-otp-button`, enter `123456` in `app-otp-input`, then press `app-verify-otp-button` before continuing. On step 6, press `app-selfie-button`. After submitting, `application-success` shows the new account number, and the browser is signed in to Banking.
+- **Hidden balances:** `balance-toggle` on the banking dashboard hides balances as `₱ ••••••`. Balances show by default. Account cards show only the last four digits of the account number. The account page shows the full number.
 - **Repeated amounts:** an identical bank transaction within 30 seconds is rejected. See the [API guide](api-guide.md#duplicate-transaction-prevention).
 
 ## Using the API for test setup
@@ -136,6 +141,8 @@ login-email
 login-error
 login-form
 login-module
+login-open-account-link
+login-open-account-prompt
 login-password
 login-register-link
 login-registered-notice
@@ -320,13 +327,103 @@ orders-table
 ### Banking
 
 ```text
+account-card-<id>
+account-maturity-<id>
+account-maturity-notice
+account-opened-notice
+app-address-line
+app-barangay
+app-birth-date
+app-birth-place
+app-city
+app-civil-status
+app-confirm-password
+app-consent-adult
+app-consent-resident
+app-consent-terms
+app-consent-valid-id
+app-email
+app-employer-name
+app-employment-status
+app-first-name
+app-id-expiry
+app-id-notice
+app-id-number
+app-id-type
+app-last-name
+app-middle-name
+app-mobile
+app-monthly-income
+app-mothers-maiden-name
+app-nationality
+app-occupation
+app-opening-deposit
+app-otp
+app-otp-hint
+app-otp-verified
+app-password
+app-postal-code
+app-product-<code>
+app-product-radio-<code>
+app-province
+app-review-<n>
+app-review-edit-<n>
+app-selfie-button
+app-selfie-error
+app-selfie-status
+app-send-otp-button
+app-sex
+app-source-of-funds
+app-suffix
+app-tin
+app-user-id
+app-verify-otp-button
+application-account-balance
+application-account-name
+application-account-number
+application-back-button
+application-continue-button
+application-error
+application-form
+application-go-to-banking
+application-hero
+application-number
+application-progress
+application-progress-<n>
+application-requirements
+application-review
+application-signin-link
+application-step-title
+application-success
+application-title
+balance-toggle
 banking
 banking-deposit-link
 banking-empty-state
+banking-hero
+banking-open-account-link
+banking-quick-actions
+banking-recent
+banking-recent-empty
+banking-title
 banking-total-balance
 banking-transfer-link
 banking-withdraw-link
 deposit
+open-account
+open-account-back-link
+open-account-deposit
+open-account-error
+open-account-form
+open-account-nickname
+open-account-no-funding
+open-account-product-<code>
+open-account-product-error
+open-account-product-radio-<code>
+open-account-source
+open-account-submit-button
+open-account-term
+recent-transaction-<id>
 transaction-amount-<id>
 transaction-balance-<id>
 transaction-filter-error

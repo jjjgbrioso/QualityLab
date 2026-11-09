@@ -62,7 +62,7 @@ npm run db:seed
 Remove-Item Env:QL_ENV
 ```
 
-`db:seed` refuses a database that already has data. When the baseline itself changes, as it did when cruises and sale prices were added, apply the migrations and then [reset STAGING](#resetting-staging) to load the new baseline. A reset deletes everything on that database, including anything visitors created.
+`db:seed` refuses a database that already has data. The banking update, which moved Banking to pesos and added account opening, needs only `db:deploy`: its migration converts existing accounts itself. When the baseline itself changes, as it did when cruises and sale prices were added, apply the migrations and then [reset STAGING](#resetting-staging) to load the new baseline. A reset deletes everything on that database, including anything visitors created.
 
 ## Setting up a new environment
 

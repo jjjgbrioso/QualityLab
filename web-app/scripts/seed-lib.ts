@@ -38,6 +38,7 @@ const BASELINE_DATE = new Date("2026-01-01T00:00:00.000Z");
 
 /** Tables are listed so a new model has to be added here on purpose. */
 const TABLES = [
+  "CustomerProfile",
   "IdempotencyKey",
   "RevokedToken",
   "CruiseBooking",
@@ -92,7 +93,12 @@ export async function seedDatabase(prisma: PrismaClient) {
   });
 
   await prisma.bankAccount.createMany({
-    data: BANK_ACCOUNTS.map((account) => ({ ...account, createdAt: BASELINE_DATE, updatedAt: BASELINE_DATE })),
+    data: BANK_ACCOUNTS.map((account) => ({
+      ...account,
+      product: account.type === "SAVINGS" ? "STARTER_SAVINGS" : "EVERYDAY_CHECKING",
+      createdAt: BASELINE_DATE,
+      updatedAt: BASELINE_DATE,
+    })),
   });
 
   await prisma.bankTransaction.createMany({

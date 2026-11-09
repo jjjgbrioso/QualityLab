@@ -13,7 +13,7 @@ const MODULES = [
     href: "/banking",
     id: "banking",
     title: "Banking",
-    text: "Test accounts, deposits, withdrawals, transfers, and duplicate transaction prevention.",
+    text: "Online account opening, peso accounts, time deposits, deposits, withdrawals, transfers, and duplicate transaction prevention.",
   },
   {
     href: "/travel",

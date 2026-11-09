@@ -96,6 +96,10 @@ An error:
 | `UNAUTHORIZED` | 401 | A valid token is required |
 | `INVALID_CREDENTIALS` | 401 | The email or password is wrong |
 | `MODULE_NOT_ALLOWED` | 403 | The token was issued for another module, or a customer tried to log in to Admin |
+| `INVALID_OTP` | 422 | The one-time PIN is not `123456` |
+| `ID_VERIFICATION_FAILED` | 422 | The application's ID number ends in `0000` |
+| `BELOW_MINIMUM_DEPOSIT` | 422 | The opening deposit is below the product minimum |
+| `TIME_DEPOSIT_LOCKED` | 422 | A time deposit cannot take deposits, and cannot pay out before it matures |
 | `PAYMENT_DECLINED` | 402 | The test card was declined |
 | `PAYMENT_INSUFFICIENT_FUNDS` | 402 | The test card has insufficient funds |
 | `FORBIDDEN` | 403 | Wrong role, or the resource belongs to someone else |
@@ -139,6 +143,8 @@ An error:
 
 Amounts are integer cents, such as `priceCents` and `amountCents`, so $25.00 is `2500`. The exception is the `minPrice` and `maxPrice` query filters, which are in dollars.
 
+Banking is in Philippine pesos: bank accounts have `currency` set to `PHP`, and their amounts are in centavos, so ₱2,500.00 is `250000`. The shop and travel modules stay in US dollars.
+
 ## Pagination
 
 List endpoints accept `page`, which starts at 1, and `pageSize`, which defaults to 12 and allows up to 100. A page past the end returns an empty list, not an error.
@@ -175,6 +181,15 @@ Bookings close on the day a sailing departs.
 Products, hotels, ships, and sailings include `imageUrl`: a path on this site, such as `/images/products/prod_0001.jpg`, or `null` when there is no photo. A sailing's `imageUrl` shows its destination, and `ship.imageUrl` shows the ship.
 
 Admins can set a product's `imageUrl` when creating or updating it. It must be a path starting with a single `/`, or an `https://` address, with no spaces and at most 500 characters. Send `null` to remove the photo. Anything else returns 400 `VALIDATION_ERROR` with the field `imageUrl`.
+
+## Opening bank accounts
+
+- `GET /api/v1/bank/products` lists the deposit products, with opening minimums in centavos. It needs no token.
+- `POST /api/v1/bank/applications/verify-otp` checks the simulated one-time PIN. No message is sent, and the PIN is always `123456`.
+- `POST /api/v1/bank/applications` is the new-customer application. It needs no token. Send `consent`, `contact`, `otp`, `personal`, `address`, `work`, `identification`, `account`, and `password`. It returns 201 with the new login's `user` and the first `account`. Error fields are nested, such as `identification.idNumber` or `contact.email`.
+- `POST /api/v1/bank/accounts` opens another account for a signed-in banking customer. It needs an `Idempotency-Key` and moves the opening deposit from `sourceAccountId`. A time deposit needs `termMonths` of 3, 6, or 12.
+
+Bank accounts include `product`, `productName`, `termMonths`, `interestRateBps`, `maturityDate`, and `locked`. A locked time deposit refuses deposits, withdrawals, and transfers with 422 `TIME_DEPOSIT_LOCKED`.
 
 ## Guest information
 

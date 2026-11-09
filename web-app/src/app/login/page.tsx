@@ -60,6 +60,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           </div>
         ) : null}
         <LoginForm next={nextPath} module={pageModule} />
+        {pageModule === "banking" ? (
+          <p className="mt-4 rounded-md bg-emerald-50 p-3 text-sm" data-testid="login-open-account-prompt">
+            New to QualityLab Bank?{" "}
+            <Link href="/banking/open" className="font-semibold text-emerald-800 hover:underline" data-testid="login-open-account-link">
+              Open an account online
+            </Link>
+          </p>
+        ) : null}
       </Card>
 
       <Card className="p-6" testId="test-accounts-panel">

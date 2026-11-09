@@ -2,6 +2,7 @@ import { z } from "zod";
 import { moduleForApi } from "@/lib/modules";
 import { loginSchema, registerSchema } from "@/lib/validation/auth";
 import { cashTransactionSchema, transferSchema } from "@/lib/validation/bank";
+import { bankApplicationSchema, openAccountSchema, otpVerifySchema } from "@/lib/validation/bank-onboarding";
 import {
   addCartItemSchema,
   checkoutSchema,
@@ -265,11 +266,32 @@ const schemas: Record<string, Json> = {
     id: "string",
     accountNumber: "string",
     name: "string",
-    type: { type: "string", enum: ["CHECKING", "SAVINGS"] },
+    type: { type: "string", enum: ["CHECKING", "SAVINGS", "TIME_DEPOSIT"] },
+    product: { type: ["string", "null"], enum: ["STARTER_SAVINGS", "EVERYDAY_CHECKING", "TIME_DEPOSIT", null] },
+    productName: { type: ["string", "null"] },
     status: { type: "string", enum: ["ACTIVE", "FROZEN"] },
-    currency: "string",
-    balanceCents: "integer",
+    currency: { type: "string", example: "PHP" },
+    balanceCents: { type: "integer", description: "Centavos" },
+    termMonths: { type: ["integer", "null"], description: "Time deposits only" },
+    interestRateBps: { type: ["integer", "null"], description: "Annual rate in basis points, for display" },
+    maturityDate: { type: ["string", "null"], format: "date" },
+    locked: { type: "boolean", description: "True for a time deposit before its maturity date" },
     createdAt: dateTime,
+  }),
+  BankProduct: properties({
+    code: { type: "string", enum: ["STARTER_SAVINGS", "EVERYDAY_CHECKING", "TIME_DEPOSIT"] },
+    name: "string",
+    type: { type: "string", enum: ["SAVINGS", "CHECKING", "TIME_DEPOSIT"] },
+    summary: "string",
+    minimumOpeningCents: "integer",
+    maintainingBalanceCents: "integer",
+    ratesBps: { type: "object", additionalProperties: { type: "integer" }, description: "Annual rate by term in months; 0 for no term" },
+    forNewCustomers: "boolean",
+  }),
+  BankApplicationResult: properties({
+    applicationNumber: "string",
+    user: ref("User"),
+    account: ref("BankAccount"),
   }),
   BankTransaction: properties({
     id: "string",
@@ -601,6 +623,49 @@ const paths: Record<string, Record<string, Json>> = {
       summary: "My accounts and balances",
       auth: true,
       schema: { type: "array", items: ref("BankAccount") },
+    }),
+    post: operation({
+      tag: "Banking",
+      summary: "Open another account",
+      description:
+        "Funded by a transfer from one of your accounts. A time deposit needs termMonths (3, 6, or 12) and is locked until it matures. Errors: 422 BELOW_MINIMUM_DEPOSIT, INSUFFICIENT_FUNDS, ACCOUNT_FROZEN, TIME_DEPOSIT_LOCKED.",
+      auth: true,
+      parameters: [idempotencyHeader],
+      body: openAccountSchema,
+      status: 201,
+      schema: properties({ account: ref("BankAccount"), transaction: ref("BankTransaction") }),
+      headers: replayHeader,
+      errors: [403, 404, 409, 422],
+    }),
+  },
+  "/api/v1/bank/products": {
+    get: operation({
+      tag: "Banking",
+      summary: "Deposit products",
+      description: "Public. Amounts are in centavos.",
+      schema: { type: "array", items: ref("BankProduct") },
+    }),
+  },
+  "/api/v1/bank/applications/verify-otp": {
+    post: operation({
+      tag: "Banking",
+      summary: "Check the one-time PIN (simulated)",
+      description: "Public. No message is sent. The PIN is always 123456; any other value returns 422 INVALID_OTP.",
+      body: otpVerifySchema,
+      schema: properties({ verified: "boolean" }),
+      errors: [422],
+    }),
+  },
+  "/api/v1/bank/applications": {
+    post: operation({
+      tag: "Banking",
+      summary: "Apply for a new account (new customers)",
+      description:
+        "Public. Creates the customer's login (their email and password), their profile, and their first account, with the opening deposit simulated. All data must be fictional. Errors: 422 INVALID_OTP (PIN is not 123456), 422 ID_VERIFICATION_FAILED (ID number ends in 0000), 422 BELOW_MINIMUM_DEPOSIT, 409 EMAIL_ALREADY_REGISTERED. Field paths in errors are nested, such as identification.idNumber.",
+      body: bankApplicationSchema,
+      status: 201,
+      schema: ref("BankApplicationResult"),
+      errors: [409, 422],
     }),
   },
   "/api/v1/bank/accounts/{id}": {

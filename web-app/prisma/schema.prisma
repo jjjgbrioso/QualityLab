@@ -41,6 +41,7 @@ enum InventoryReason {
 enum BankAccountType {
   CHECKING
   SAVINGS
+  TIME_DEPOSIT
 }
 
 enum BankAccountStatus {
@@ -91,6 +92,39 @@ model User {
   bookings        Booking[]
   cruiseBookings  CruiseBooking[]
   idempotencyKeys IdempotencyKey[]
+  profile         CustomerProfile?
+}
+
+// Know-your-customer details collected by the online account application. All values are
+// fictional test data: the app asks for no real IDs, photos, or documents.
+model CustomerProfile {
+  userId            String   @id
+  middleName        String?
+  suffix            String?
+  birthDate         DateTime @db.Date
+  birthPlace        String
+  sex               String
+  civilStatus       String
+  nationality       String
+  mothersMaidenName String
+  mobileNumber      String
+  addressLine       String
+  barangay          String
+  city              String
+  province          String
+  postalCode        String
+  employmentStatus  String
+  employerName      String?
+  occupation        String
+  sourceOfFunds     String
+  monthlyIncome     String
+  tin               String?
+  idType            String
+  idNumber          String
+  idExpiry          DateTime? @db.Date
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Holds the jti of tokens ended by logout, until they would have expired anyway.
@@ -207,8 +241,14 @@ model BankAccount {
   name          String
   type          BankAccountType   @default(CHECKING)
   status        BankAccountStatus @default(ACTIVE)
-  currency      String            @default("USD")
+  currency      String            @default("PHP")
   balanceCents  Int               @default(0)
+  // Product code from src/lib/bank-products.ts. Null for accounts opened before products existed.
+  product       String?
+  // Time deposits only: the money is locked until the maturity date.
+  termMonths      Int?
+  interestRateBps Int?
+  maturityDate    DateTime?         @db.Date
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 

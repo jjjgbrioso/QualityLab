@@ -1,7 +1,14 @@
-const formatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const dollars = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+const pesos = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
+/** US dollars, used by the shop and travel modules. */
 export function formatCents(cents: number): string {
-  return formatter.format(cents / 100);
+  return dollars.format(cents / 100);
+}
+
+/** Philippine pesos, used by the banking module. Amounts are stored in centavos. */
+export function formatPeso(centavos: number): string {
+  return pesos.format(centavos / 100);
 }
 
 /** Converts text such as "12.50" to 1250. Returns null unless it has at most two decimals. */

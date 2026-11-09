@@ -3,10 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Field, SelectField } from "@/components/forms/fields";
-import { Alert, buttonStyles, Card } from "@/components/ui";
+import { Alert, Card } from "@/components/ui";
 import { apiRequest } from "@/lib/client/api";
 import { useSubmit } from "@/lib/client/use-submit";
-import { dollarsToCents, formatCents } from "@/lib/money";
+import { bankButton } from "@/components/bank";
+import { dollarsToCents, formatPeso as formatCents } from "@/lib/money";
 import type { AccountDto, TransactionDto } from "@/lib/services/bank";
 
 type Kind = "deposit" | "withdrawal" | "transfer";
@@ -84,7 +85,7 @@ export function BankTransactionForm({ kind, accounts }: { kind: Kind; accounts: 
           {accounts.map((account) => (
             <option key={account.id} value={account.id}>
               {account.name} ({account.accountNumber}) {formatCents(account.balanceCents)}
-              {account.status === "FROZEN" ? " - frozen" : ""}
+              {account.status === "FROZEN" ? " - frozen" : account.locked ? " - locked time deposit" : ""}
             </option>
           ))}
         </SelectField>
@@ -102,7 +103,7 @@ export function BankTransactionForm({ kind, accounts }: { kind: Kind; accounts: 
         ) : null}
 
         <Field
-          label="Amount (USD)"
+          label="Amount (PHP)"
           name="amount"
           inputMode="decimal"
           autoComplete="off"
@@ -116,7 +117,7 @@ export function BankTransactionForm({ kind, accounts }: { kind: Kind; accounts: 
           testId={`${testId}-description`}
           error={fieldErrors.description}
         />
-        <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} w-full`} data-testid={`${testId}-submit-button`}>
+        <button type="submit" disabled={!ready || pending} className={`${bankButton} w-full`} data-testid={`${testId}-submit-button`}>
           {pending ? "Processing..." : action}
         </button>
       </form>
