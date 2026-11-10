@@ -1,0 +1,102 @@
+﻿"ID","Module","Suite","Title","Type","Priority","Preconditions","Test data","Steps","Expected result","Test level","Scenario ref","Status"
+"EC-LOG-01","E-commerce","Login","Choosing E-commerce while signed out opens its login page","Positive","P1","Test data at baseline (npm run db:reset). Signed out.","","1. Open the home page.
+2. Click the E-commerce module card.","The login page opens at /login?next=%2Fshop with the title ""Sign in to E-commerce"" and the notice ""Please sign in to continue."" The navigation has no Login link.","UI","AUTH-12","Not run"
+"EC-LOG-02","E-commerce","Login","Sign in to E-commerce with a valid customer","Positive","P1","Test data at baseline (npm run db:reset). Signed out.","alice@qualitylab.test / Customer@123","1. Open the home page and click E-commerce.
+2. Enter the email and password.
+3. Click ""Sign in to E-commerce"".","The shop opens at /shop. The navigation shows All modules, API Docs, E-commerce, Orders, Cart (n), Account, the name Alice, and an ""E-commerce"" module badge.","UI","AUTH-05, MOD-01","Not run"
+"EC-LOG-03","E-commerce","Login","Returns to the filtered page after sign-in","Positive","P2","Test data at baseline (npm run db:reset). Signed out.","/shop?category=Books","1. Open /shop?category=Books while signed out.
+2. Sign in as Alice.","The shop opens with the Books category still applied: 5 products.","UI","AUTH-15","Not run"
+"EC-LOG-04","E-commerce","Login","Logout ends the session","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Click Logout.
+2. Open /shop.","The navigation shows the signed-out links. /shop shows the ""Sign in to E-commerce"" page.","UI","AUTH-09","Not run"
+"EC-LOG-05","E-commerce","Login","API Docs and Health links appear only after sign-in","Positive","P3","Test data at baseline (npm run db:reset). Signed out.","","1. Open the home page signed out and look at the navigation and footer.
+2. Sign in to E-commerce and look again.","Signed out: no API Docs or Health link. Signed in: API Docs in the navigation, API Docs and Health in the footer.","UI","AUTH-16, AUTH-18","Not run"
+"EC-LOG-06","E-commerce","Login","Wrong password is refused","Negative","P1","Test data at baseline (npm run db:reset). Signed out.","alice@qualitylab.test / Wrong@123","1. Open the E-commerce login page.
+2. Enter the email and the wrong password.
+3. Click Sign in.","The error ""The email or password is incorrect."" appears. The user stays on the login page.","UI","AUTH-06","Not run"
+"EC-LOG-07","E-commerce","Login","Unknown email gets the same message as a wrong password","Negative","P2","Test data at baseline (npm run db:reset). Signed out.","ghost@qualitylab.test / Wrong@123","1. Open the E-commerce login page.
+2. Sign in with the unknown email.","Exactly the same error as EC-LOG-06, so the page does not reveal which emails exist.","UI","AUTH-07","Not run"
+"EC-LOG-08","E-commerce","Login","Disabled account cannot sign in","Negative","P1","Test data at baseline (npm run db:reset). Signed out.","disabled@qualitylab.test / Customer@123","1. Open the E-commerce login page.
+2. Sign in with the disabled account.","The error ""This account has been disabled."" appears.","UI","AUTH-08","Not run"
+"EC-LOG-09","E-commerce","Login","Empty login form shows field errors","Negative","P2","Test data at baseline (npm run db:reset). Signed out.","","1. Open the E-commerce login page.
+2. Click Sign in without entering anything.","An error appears under Email and under Password. No request signs the user in.","UI","UI-02","Not run"
+"EC-LOG-10","E-commerce","Login","Signed in to E-commerce, Banking asks for its own sign-in","Negative","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Click All modules in the navigation.
+2. Click the Banking card.","The ""Sign in to Banking"" page opens with the warning ""You are signed in to E-commerce. Each sign-in opens one module, so signing in to Banking ends your E-commerce session.""","UI","MOD-02","Not run"
+"EC-LOG-11","E-commerce","Login","Switching to another module locks E-commerce","Negative","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","alice@qualitylab.test / Customer@123","1. From EC-LOG-10, sign in to Banking.
+2. Open /shop.","/shop shows the ""Sign in to E-commerce"" page. The E-commerce session has ended.","UI","MOD-03, MOD-08","Not run"
+"EC-LOG-12","E-commerce","Login","A crafted next link cannot send the user off the site","Negative","P2","Test data at baseline (npm run db:reset). Signed out.","/login?next=https://example.com","1. Open the crafted link.
+2. Choose E-commerce in the Module select and sign in.","The user lands on /shop on this site, never on example.com.","UI","AUTH-14","Not run"
+"EC-LOG-13","E-commerce","Login","Email in capitals with spaces still signs in","Edge","P3","Test data at baseline (npm run db:reset). Signed out.","""  ALICE@QualityLab.TEST  "" / Customer@123","1. Open the E-commerce login page.
+2. Enter the email with capitals and surrounding spaces.
+3. Sign in.","Signed in as Alice: the email is trimmed and matched without regard to case.","UI","","Not run"
+"EC-SHP-01","E-commerce","Product search","Shop home shows banners, flash sale, and categories","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Open /shop with no filters.","Promo banners, a Flash Sale strip of 6 items in this order: Willow Knit Throw, Drift Rain Jacket, Grid Dot Notebook, Pulse Bluetooth Speaker, Summit Trail Backpack, Tempo Jump Rope; and 6 category tiles.","UI","SHOP-11","Not run"
+"EC-SHP-02","E-commerce","Product search","Search by keyword","Positive","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Search: keyboard","1. Type keyboard in the search bar.
+2. Press Search.","Only Vector Mechanical Keyboard (prod_0003) is listed.","UI","SHOP-02","Not run"
+"EC-SHP-03","E-commerce","Product search","Filter by category","Positive","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Category: Books","1. Choose the Books category tile or filter.","5 products are listed, all in Books.","UI","SHOP-03, SHOP-15","Not run"
+"EC-SHP-04","E-commerce","Product search","On-sale filter","Positive","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Tick ""On sale"" in the filters.
+2. Apply.","9 products, each with a discount badge and a crossed-out original price.","UI","SHOP-12","Not run"
+"EC-SHP-05","E-commerce","Product search","Out-of-stock filter","Positive","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","In stock: No","1. Set the stock filter to out of stock.
+2. Apply.","Horizon 27-inch Monitor (prod_0006) and Hydra Steel Bottle (prod_0021), each marked Out of stock.","UI","SHOP-04","Not run"
+"EC-SHP-06","E-commerce","Product search","Sort by price, high to low","Positive","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Choose ""Highest price"" in Sort by.","The list reloads at once. Prices never increase down the list.","UI","SHOP-05","Not run"
+"EC-SHP-07","E-commerce","Product search","Pagination","Positive","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Choose ""Lowest price"" in Sort by to list every product.
+2. Click Next under the product grid.","Page 2 shows the next products with no repeats from page 1.","UI","SHOP-01","Not run"
+"EC-SHP-08","E-commerce","Product search","Product cards show photos","Positive","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Scroll through the product grid.","Every card shows a loaded photo (data-testid product-image-<id>) with no broken images.","UI","SHOP-18","Not run"
+"EC-SHP-09","E-commerce","Product search","Minimum price above maximum is rejected","Negative","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Min 100, Max 50","1. Enter the minimum and maximum price.
+2. Apply.","A message says the maximum must not be below the minimum, and the default list shows.","UI","SHOP-07","Not run"
+"EC-SHP-10","E-commerce","Product search","No results shows an empty state","Negative","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Search: zzzz","1. Search for zzzz.","An empty-state message, and no product cards.","UI","SHOP-06","Not run"
+"EC-SHP-11","E-commerce","Product search","Search ignores letter case","Edge","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Search: KEYBOARD","1. Search for KEYBOARD.","Vector Mechanical Keyboard is listed, as for keyboard.","UI","","Not run"
+"EC-SHP-12","E-commerce","Product search","Search text length limit","Edge","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","100 characters, then 101 characters","1. Search with exactly 100 characters.
+2. Search with 101 characters.","100 characters: searches normally (no results). 101 characters: ""Search text must be at most 100 characters.""","UI","","Not run"
+"EC-SHP-13","E-commerce","Product search","Special characters are shown as text","Edge","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Search: <script>alert(1)</script>","1. Search for the text.","No results. The text is shown as typed, and no pop-up or script runs.","UI","","Not run"
+"EC-SHP-14","E-commerce","Product search","Price range with equal minimum and maximum","Edge","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","Min 14.99, Max 14.99","1. Set both prices to 14.99 and apply.","Only products priced exactly $14.99 are listed, including Grid Dot Notebook: both ends of the range are included.","UI","","Not run"
+"EC-PRD-01","E-commerce","Product page","Sale product shows the saving","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0009","1. Open /shop/prod_0009.","Willow Knit Throw at $69.99, was $99.99, -30%, ""You save $30.00"", with a photo, Buy now, and Add to cart.","UI","SHOP-13","Not run"
+"EC-PRD-02","E-commerce","Product page","Buy now goes straight to checkout","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0027, quantity 1","1. Open /shop/prod_0027.
+2. Click Buy now.","The item is added to the cart and the checkout page opens with Grid Dot Notebook at $14.99.","UI","SHOP-14","Not run"
+"EC-PRD-03","E-commerce","Product page","Related products link to their pages","Positive","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0009","1. Open /shop/prod_0009.
+2. Click a product under ""More in Home"".","That product's page opens.","UI","","Not run"
+"EC-PRD-04","E-commerce","Product page","Out-of-stock product cannot be added","Negative","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0006","1. Open /shop/prod_0006.","An out-of-stock notice shows, and there is no Add to cart or Buy now button.","UI","SHOP-10","Not run"
+"EC-PRD-05","E-commerce","Product page","Inactive product is not found","Negative","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0030","1. Open /shop/prod_0030.","The not-found page shows.","UI","SHOP-09","Not run"
+"EC-PRD-06","E-commerce","Product page","Cannot add more than the stock","Negative","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0004 (stock 3), quantity 5","1. Open /shop/prod_0004.
+2. Set Quantity to 5.
+3. Click Add to cart.","An error says there is not enough stock. The cart is unchanged.","UI","CART-04","Not run"
+"EC-PRD-07","E-commerce","Product page","Add exactly the available stock","Edge","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0004 (stock 3), quantity 3","1. Open /shop/prod_0004.
+2. Set Quantity to 3.
+3. Click Add to cart.","All 3 are added. Adding 1 more is refused for lack of stock.","UI","","Not run"
+"EC-CRT-01","E-commerce","Cart","Add a product to the cart","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","prod_0001, quantity 1","1. Open /shop/prod_0001.
+2. Click Add to cart.","A success message shows, and the navigation cart count goes up by 1.","UI","CART-01","Not run"
+"EC-CRT-02","E-commerce","Cart","Adding the same product again combines the lines","Positive","P1","EC-CRT-01 done.","prod_0001","1. Add prod_0001 to the cart again.
+2. Open /cart.","One line for Aurora Wireless Headphones with quantity 2.","UI","CART-01","Not run"
+"EC-CRT-03","E-commerce","Cart","Change a quantity","Positive","P2","A product is in the cart.","Quantity 3","1. Open /cart.
+2. Change the quantity to 3.
+3. Press Tab to leave the field.","The line total, subtotal, tax, and total update. The change saves when the field loses focus.","UI","CART-02","Not run"
+"EC-CRT-04","E-commerce","Cart","Remove a line","Positive","P2","A product is in the cart.","","1. Open /cart.
+2. Click Remove on the line.","The line disappears and the totals update. With no lines left, the empty cart message shows.","UI","CART-03","Not run"
+"EC-CRT-05","E-commerce","Cart","Empty cart state","Positive","P3","Signed in to E-commerce as empty@qualitylab.test.","","1. Open /cart.","The empty cart message shows, with no checkout button.","UI","","Not run"
+"EC-CRT-06","E-commerce","Cart","Shipping is free from $50.00","Edge","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123. Cart empty.","prod_0013 ($34.99)","1. Add 1 unit of prod_0013 and open /cart.
+2. Change the quantity to 2.","1 unit: subtotal $34.99, tax $2.80, shipping $5.99, total $43.78. 2 units: subtotal $69.98, shipping free.","UI","CART-05","Not run"
+"EC-CRT-07","E-commerce","Cart","Subtotal just under $50.00 still pays shipping","Edge","P2","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123. Cart empty.","prod_0013 ($34.99) + prod_0027 ($14.99) = $49.98","1. Add both products and open /cart.","Subtotal $49.98, shipping $5.99. Free shipping starts at $50.00.","UI","","Not run"
+"EC-CHK-01","E-commerce","Checkout","Pay with an approved Visa test card","Positive","P1","Signed in to E-commerce as Alice, with prod_0027 in the cart.","Full name Alice Tester; Address 100 Test Avenue; City Sampletown; Postcode 00000; Country United States; Card 4242 4242 4242 4242; Expiry 12/30; CVV 123; Cardholder Alice Tester","1. Open /checkout.
+2. Fill in the shipping and card details.
+3. Click Place order.","The order confirmation shows a new ORD- number with status PAID. The cart is empty, the product's stock drops, and only the last 4 digits (4242) are shown.","UI","CHK-01","Not run"
+"EC-CHK-02","E-commerce","Checkout","Pay with an approved Mastercard test card","Positive","P2","As EC-CHK-01.","Card 5555 5555 5555 4444","1. Repeat EC-CHK-01 with the Mastercard number.","The order is PAID and shows Mastercard ending 4444.","UI","","Not run"
+"EC-CHK-03","E-commerce","Checkout","Declined card","Negative","P1","As EC-CHK-01.","Card 4000 0000 0000 0002","1. Repeat EC-CHK-01 with the declined card.","A payment-declined error shows. The cart and stock are unchanged.","UI","CHK-02","Not run"
+"EC-CHK-04","E-commerce","Checkout","Card with insufficient funds","Negative","P2","As EC-CHK-01.","Card 4000 0000 0000 9995","1. Repeat EC-CHK-01 with this card.","An insufficient-funds error shows.","UI","CHK-03","Not run"
+"EC-CHK-05","E-commerce","Checkout","Card not on the test list","Negative","P1","As EC-CHK-01.","Card 4111 1111 1111 1111","1. Repeat EC-CHK-01 with this card.","An error says to use a test card.","UI","CHK-04","Not run"
+"EC-CHK-06","E-commerce","Checkout","Empty checkout form","Negative","P2","As EC-CHK-01.","","1. Open /checkout.
+2. Click Place order without filling anything in.","An error appears under each required field. No order is created.","UI","CHK-05","Not run"
+"EC-CHK-07","E-commerce","Checkout","Expired card","Negative","P3","As EC-CHK-01.","Expiry 01/20","1. Repeat EC-CHK-01 with an expired date.","An error under Expiry.","UI","CHK-06","Not run"
+"EC-CHK-08","E-commerce","Checkout","Checkout with an empty cart","Negative","P2","Signed in to E-commerce as empty@qualitylab.test.","","1. Open /checkout.","The browser is sent to /cart.","UI","CHK-07","Not run"
+"EC-CHK-09","E-commerce","Checkout","Buy the last unit in stock","Edge","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123. Cart empty.","prod_0010 (stock 1), card 4242 4242 4242 4242","1. Add 1 Cedar Desk Organizer.
+2. Check out with the approved card.
+3. Open /shop/prod_0010.","The order is PAID. The product page now shows out of stock, with no Add to cart button.","UI","","Not run"
+"EC-ORD-01","E-commerce","Orders","Order history lists Alice's orders","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","","1. Click Orders in the navigation.","ORD-SEED0001 PAID $140.39, ORD-SEED0002 SHIPPED $80.98, ORD-SEED0003 DELIVERED $22.18, ORD-SEED0004 CANCELLED $32.98, plus any orders placed in this test run.","UI","ORD-01","Not run"
+"EC-ORD-02","E-commerce","Orders","Order details","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","order_0001","1. Open ORD-SEED0001.","Shows Aurora Wireless Headphones × 1, subtotal $129.99, tax $10.40, free shipping, total $140.39, shipping address, and the card ending 4242.","UI","ORD-01","Not run"
+"EC-ORD-03","E-commerce","Orders","Cancel a paid order","Positive","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","order_0001","1. Open ORD-SEED0001.
+2. Click Cancel order.
+3. Click ""Yes, cancel"".","Status becomes CANCELLED and payment REFUNDED. The product's stock goes back up.","UI","ORD-02","Not run"
+"EC-ORD-04","E-commerce","Orders","Keep the order from the cancel prompt","Positive","P3","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","order_0001","1. Open ORD-SEED0001.
+2. Click Cancel order.
+3. Click ""Keep it"".","The prompt closes and the order is unchanged.","UI","ORD-06","Not run"
+"EC-ORD-05","E-commerce","Orders","Shipped order cannot be cancelled","Negative","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","order_0002","1. Open ORD-SEED0002.","No Cancel order button.","UI","ORD-04","Not run"
+"EC-ORD-06","E-commerce","Orders","Cancelled order has no cancel option","Negative","P1","Test data at baseline. Home page > E-commerce > signed in as alice@qualitylab.test / Customer@123.","order_0004 (ORD-SEED0004, CANCELLED)","1. Click Orders.
+2. Open ORD-SEED0004.","The status is CANCELLED and there is no Cancel order button.","UI","ORD-03","Not run"
+"EC-ORD-07","E-commerce","Orders","Another customer's order is forbidden","Negative","P1","Signed in to E-commerce as bob@qualitylab.test.","order_0001","1. Open /orders/order_0001.","The forbidden page shows.","UI","ORD-05","Not run"
