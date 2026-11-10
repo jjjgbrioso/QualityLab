@@ -112,7 +112,7 @@ Remove-Item Env:QL_ENV
 
 ## Known limits of the public demo
 
-- The test accounts and their passwords are published on the login page by design, including the admin account. Anyone with the URL can change the demo data until the next reset. All data is fictional, but expect it to drift.
+- The test accounts and their passwords are published in the project documentation by design, including the admin account. They are no longer shown on the login page. Anyone who has them can change the demo data until the next reset. All data is fictional, but expect it to drift.
 - The application has no rate limiting, so it accepts unlimited login attempts and registrations.
 - The database sleeps after 5 minutes without traffic on Neon's Free plan, so the first request after a pause is slower. Allow for this in timing checks.
 - The Free plan allows 100 compute hours a month per project and 5 GB of network transfer. Past either limit, the database stops until the next billing period, so plan load tests with this in mind.

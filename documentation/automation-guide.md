@@ -162,8 +162,6 @@ register-login-link
 register-password
 register-submit-button
 register-title
-test-account-<id>
-test-accounts-panel
 ```
 
 ### Account
