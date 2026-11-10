@@ -7,7 +7,7 @@ How to automate against QualityLab from Selenium, Playwright, API tools, and JMe
 | Environment | Base URL | Use it for |
 | --- | --- | --- |
 | LOCAL | `http://localhost:3000`, or the port you start it on | Day-to-day test runs, and anything that resets data |
-| STAGING | `https://quality-lab-teal.vercel.app` | Checks against the deployed application |
+| STAGING | `https://quality-lab-jb.vercel.app` | Checks against the deployed application |
 
 STAGING data is public and shared, so anyone can change it. Tests there should create their own data rather than rely on exact baseline values. Run load tests against LOCAL, or check the [hosted database limits](deployment.md#known-limits-of-the-public-demo) first.
 

@@ -8,7 +8,7 @@ The application simulates three business domains behind one REST API: e-commerce
 
 Some screens take general layout ideas and flows from public marketplace, cruise, and Philippine banking sites, such as how a bank app opens an account online. All branding, text, illustrations, products, ships, hotels, and prices are original and fictional. Product, hotel, ship, and destination photos are free Unsplash photos used under the Unsplash License, with no brands shown. Each one is credited in [Image credits](documentation/image-credits.md).
 
-**Live demo:** https://quality-lab-teal.vercel.app ([API docs](https://quality-lab-teal.vercel.app/api-docs), [health check](https://quality-lab-teal.vercel.app/api/v1/health))
+**Live demo:** https://quality-lab-jb.vercel.app ([API docs](https://quality-lab-jb.vercel.app/api-docs), [health check](https://quality-lab-jb.vercel.app/api/v1/health))
 
 ## Project status
 

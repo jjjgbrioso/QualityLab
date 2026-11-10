@@ -1,6 +1,6 @@
 # Environments and deployment
 
-STAGING is live at https://quality-lab-teal.vercel.app.
+STAGING is live at https://quality-lab-jb.vercel.app. The earlier address, https://quality-lab-teal.vercel.app, permanently redirects there (308), keeping the path and query, so old links and API calls still work. Both addresses are set in the Vercel project under **Settings > Domains**.
 
 ## Environments
 
