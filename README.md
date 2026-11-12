@@ -16,7 +16,8 @@ Some screens take general layout ideas and flows from public marketplace, cruise
 | --- | --- | --- |
 | 1 | QA demonstration web application (`web-app/`) | Deployed to STAGING on Vercel, with a hosted PostgreSQL database |
 | 2 | Selenium Java + Cucumber BDD UI automation (`selenium-java/`) | 28 scenarios passing against the deployed site |
-| Later | Playwright TypeScript, API testing, JMeter | Not started |
+| 3 | Playwright TypeScript UI + API-assisted automation (`playwright-typescript/`) | Chromium, Firefox and WebKit, run against the deployed site |
+| Later | API testing, JMeter | Not started |
 
 ## Repository structure
 
@@ -24,11 +25,12 @@ Some screens take general layout ideas and flows from public marketplace, cruise
 QualityLab/
 ├── web-app/          Next.js application, API, database schema, seed data, tests
 ├── selenium-java/    Selenium WebDriver, Cucumber and TestNG UI tests (see its README)
+├── playwright-typescript/  Playwright Test UI tests with API-assisted setup (see its README)
 ├── documentation/    Test data, test scenarios, API guide, deployment guide
 └── README.md
 ```
 
-Later phases will add `playwright-typescript/`, `api-testing/`, and `jmeter/`.
+Later phases will add `api-testing/` and `jmeter/`.
 
 ## What the application includes
 
