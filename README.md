@@ -18,7 +18,7 @@ Some screens take general layout ideas and flows from public marketplace, cruise
 | 2 | Selenium Java + Cucumber BDD UI automation (`selenium-java/`) | 28 scenarios passing against the deployed site |
 | 3 | Playwright TypeScript UI + API-assisted automation (`playwright-typescript/`) | 141 tests passing in Chromium, Firefox and WebKit against the deployed site |
 | 4 | API testing with Postman and Newman (`api-testing/`) | 35 endpoints, 1,602 checks; 2 genuine API defects documented |
-| Later | JMeter | Not started |
+| 5 | Performance testing with Apache JMeter (`jmeter/`) | Baseline, load, stress, spike and endurance profiles; baselines measured on LOCAL and DEPLOYED (see `jmeter/RESULTS.md`) |
 
 ### Latest automation results
 
@@ -37,11 +37,10 @@ QualityLab/
 ├── selenium-java/    Selenium WebDriver, Cucumber and TestNG UI tests (see its README)
 ├── playwright-typescript/  Playwright Test UI tests with API-assisted setup (see its README)
 ├── api-testing/      Postman collections run with Newman, HTML reports (see its README)
+├── jmeter/           JMeter performance test plan, profiles, CSV data and results (see its README)
 ├── documentation/    Test data, test scenarios, test cases, test reports, API and deployment guides
 └── README.md
 ```
-
-A later phase will add `jmeter/`.
 
 ## What the application includes
 
