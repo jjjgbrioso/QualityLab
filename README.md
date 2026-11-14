@@ -18,7 +18,7 @@ Some screens take general layout ideas and flows from public marketplace, cruise
 | 2 | Selenium Java + Cucumber BDD UI automation (`selenium-java/`) | 28 scenarios passing against the deployed site |
 | 3 | Playwright TypeScript UI + API-assisted automation (`playwright-typescript/`) | 141 tests passing in Chromium, Firefox and WebKit against the deployed site |
 | 4 | API testing with Postman and Newman (`api-testing/`) | 35 endpoints, 1,602 checks; 2 genuine API defects documented |
-| 5 | Performance testing with Apache JMeter (`jmeter/`) | Baseline, load, stress, spike and endurance profiles; baselines measured on LOCAL and DEPLOYED (see `jmeter/RESULTS.md`) |
+| 5 | Performance testing with Apache JMeter (`jmeter/`) | Baseline, load, stress, spike and endurance profiles; all five run with 0% errors: baselines on LOCAL and DEPLOYED, load, stress (50 users), spike and a 1-hour endurance run on LOCAL (see `jmeter/RESULTS.md`) |
 
 ### Latest automation results
 
