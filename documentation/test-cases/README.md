@@ -2,7 +2,9 @@
 
 179 manual UI test cases for the three customer modules. Each module starts the way a user does: choose the module on the home page, sign in, then test.
 
-These cover the user interface only. API and load testing will be separate suites, added later.
+These cover the user interface only. API and performance testing have their own projects: [qualitylab-api-testing](https://github.com/jjjgbrioso/qualitylab-api-testing) and [qualitylab-jmeter](https://github.com/jjjgbrioso/qualitylab-jmeter).
+
+**Executed on 15 November 2026: 179 cases, 178 passed, 0 failed, 1 blocked.** The results, with the actual result, status and a screenshot for every case, are in [execution/](execution/README.md) as an Excel workbook and a PDF.
 
 | Module | Cases | P1 | Positive | Negative | Edge | Readable | Spreadsheet |
 | --- | --- | --- | --- | --- | --- | --- | --- |

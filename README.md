@@ -68,6 +68,7 @@ Follow [web-app/README.md](web-app/README.md) to install and run the application
 - [Test data and accounts](documentation/test-data.md)
 - [Test scenarios](documentation/test-scenarios.md)
 - [Test cases](documentation/test-cases/README.md): step-by-step cases per module, as Markdown and CSV
+- [Test execution results](documentation/test-cases/execution/README.md): all 179 cases executed (178 passed, 1 blocked), as an Excel workbook and a PDF with a screenshot per case
 - [API guide](documentation/api-guide.md)
 - [Automation guide](documentation/automation-guide.md)
 - [Environments and deployment](documentation/deployment.md)
