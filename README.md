@@ -1,5 +1,7 @@
 # QualityLab
 
+![QualityLab: end-to-end QA automation with Playwright, Selenium, Postman and JMeter](documentation/images/qualitylab-thumbnail.jpg)
+
 QualityLab is a personal QA engineering project by Job G. Brioso. It is a demonstration web application built to be the target system for UI, API, and performance test automation.
 
 The application simulates three business domains behind one REST API: e-commerce, banking, and travel with cruise and hotel booking. Each sign-in opens one module, so switching modules means signing in again. It uses fictional data, simulated payments, and no real banking or payment integrations.
