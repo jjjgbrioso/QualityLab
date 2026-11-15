@@ -1,23 +1,44 @@
 @import "tailwindcss";
 
+/*
+ * Design system v1 (UI/UX Pro Max proposal): Swiss-minimal developer-tool look.
+ * Slate ink with a "run green" accent; IBM Plex Sans for reading, JetBrains Mono for
+ * anything a tester would type (test ids, paths, commands, counts).
+ * The fonts are loaded with next/font in layout.tsx, which sets the two variables below.
+ */
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --color-ink: #0f172a;
   --color-muted: #475569;
   --color-line: #e2e8f0;
   --color-canvas: #f8fafc;
   --color-surface: #ffffff;
+  /* Form-field borders: 4.8:1 on white, so the field outline meets the 3:1 non-text contrast rule. */
+  --color-field: #64748b;
 
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-700: #0f766e;
-  --color-brand-800: #115e59;
+  /* Accent: #15803d carries white text at 5.0:1. Run green is for dark surfaces only (7.8:1 with ink text). */
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-700: #15803d;
+  --color-brand-800: #166534;
+  --color-run: #22c55e;
+  --color-run-bright: #4ade80;
 }
 
 body {
   background: var(--color-canvas);
   color: var(--color-ink);
+}
+
+/*
+ * Paints a section's background (set --bleed to the colour) across the full window width while its content stays
+ * in the centred main container. A box-shadow never widens the page, unlike 100vw margins, so nothing scrolls sideways.
+ */
+.full-bleed {
+  box-shadow: 0 0 0 100vmax var(--bleed);
+  clip-path: inset(0 -100vmax);
 }
 
 /* Swagger UI brings its own light styling, so it sits on a plain white surface. */

@@ -118,6 +118,7 @@ forbidden-home-link
 forbidden-page
 home-cta-api-docs
 home-cta-explore
+home-cta-register
 home-feature-list
 home-hero
 home-module-<id>
@@ -127,6 +128,7 @@ mobile-menu-toggle
 mobile-nav-logout
 nav-current-module
 nav-link-modules
+nav-link-register
 nav-logo
 nav-logout
 nav-main
@@ -146,6 +148,7 @@ login-module
 login-open-account-link
 login-open-account-prompt
 login-password
+login-password-toggle
 login-register-link
 login-registered-notice
 login-required-notice

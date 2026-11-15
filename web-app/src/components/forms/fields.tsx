@@ -1,9 +1,9 @@
 import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from "react";
 import { inputStyles } from "@/components/ui";
 
-type Shared = { label: string; testId: string; error?: string; hint?: string };
+export type Shared = { label: string; testId: string; error?: string; hint?: string };
 
-function Wrapper({ id, label, testId, error, hint, children }: Shared & { id: string; children: ReactNode }) {
+export function Wrapper({ id, label, testId, error, hint, children }: Shared & { id: string; children: ReactNode }) {
   return (
     <div>
       <label htmlFor={id} className="mb-1 block text-sm font-medium" data-testid={`${testId}-label`}>
@@ -24,7 +24,7 @@ function Wrapper({ id, label, testId, error, hint, children }: Shared & { id: st
   );
 }
 
-function describedBy(id: string, error?: string, hint?: string) {
+export function describedBy(id: string, error?: string, hint?: string) {
   if (error) return `${id}-error`;
   return hint ? `${id}-hint` : undefined;
 }

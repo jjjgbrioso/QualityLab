@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/forms/LoginForm";
 import { Alert, Card, linkStyles } from "@/components/ui";
 import { getSessionUser, safeNextPath } from "@/lib/auth/session";
-import { MODULE_LABELS, moduleForPage } from "@/lib/modules";
+import { type AppModule, MODULE_LABELS, moduleForPage } from "@/lib/modules";
 import type { SearchParams } from "@/lib/page-helpers";
 
 export const metadata: Metadata = { title: "Login" };
@@ -20,13 +20,18 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const switching = session && pageModule && session.module !== pageModule ? session.module : null;
   const redirectedHere = nextPath !== "/";
 
+  const testable = pageModule ? MODULE_TESTABLE[pageModule] : GENERAL_TESTABLE;
+
   return (
-    <div className="mx-auto max-w-md">
-      <Card className="p-6">
-        <h1 className="text-xl font-semibold" data-testid="login-title">
+    <div className="mx-auto grid max-w-5xl gap-6 py-4 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:py-8">
+      <Card className="p-6 sm:p-10">
+        <p className="font-mono text-[13px] font-medium uppercase tracking-[0.06em] text-brand-700">
+          {pageModule ? `${MODULE_LABELS[pageModule]} module` : "QualityLab"}
+        </p>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight sm:text-3xl" data-testid="login-title">
           {pageModule ? `Sign in to ${MODULE_LABELS[pageModule]}` : "Sign in"}
         </h1>
-        <p className="mb-4 mt-1 text-sm text-muted">
+        <p className="mb-6 mt-1.5 text-muted">
           New here?{" "}
           <Link href={redirectedHere ? `/register?next=${encodeURIComponent(nextPath)}` : "/register"} className={linkStyles} data-testid="login-register-link">
             Create an account
@@ -54,7 +59,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         ) : null}
         <LoginForm next={nextPath} module={pageModule} />
         {pageModule === "banking" ? (
-          <p className="mt-4 rounded-md bg-emerald-50 p-3 text-sm" data-testid="login-open-account-prompt">
+          <p className="mt-6 rounded-md border border-emerald-200 bg-emerald-50 p-3.5 text-sm text-emerald-900" data-testid="login-open-account-prompt">
             New to QualityLab Bank?{" "}
             <Link href="/banking/open" className="font-semibold text-emerald-800 hover:underline" data-testid="login-open-account-link">
               Open an account online
@@ -62,6 +67,44 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           </p>
         ) : null}
       </Card>
+
+      <aside aria-labelledby="login-context-heading" className="flex flex-col gap-6 rounded-lg bg-ink p-6 text-slate-50 sm:p-10">
+        <h2 id="login-context-heading" className="text-xl font-semibold">
+          {pageModule ? "What you can test here" : "One module per sign-in"}
+        </h2>
+        <ul className="flex flex-col gap-3.5 text-slate-300">
+          {testable.map((item) => (
+            <li key={item} className="flex gap-2.5">
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-1 size-[18px] flex-none text-run-bright">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+              {item}
+            </li>
+          ))}
+        </ul>
+        <div className="mt-auto flex flex-col gap-2.5 border-t border-slate-800 pt-6">
+          <p className="text-[15px] text-slate-300">Seeded test accounts are listed in the project documentation. Reset the data before each run:</p>
+          <code className="self-start rounded-md border border-slate-800 bg-slate-950 px-2.5 py-1.5 font-mono text-sm text-run-bright">npm run db:reset</code>
+        </div>
+      </aside>
     </div>
   );
 }
+
+const MODULE_TESTABLE: Record<AppModule, string[]> = {
+  ecommerce: ["Product search, filters, and sorting", "Cart quantities and inventory limits", "Simulated checkout and order history", "Order cancellation rules"],
+  banking: [
+    "Online account opening with field validation",
+    "Peso accounts, deposits, and withdrawals",
+    "Time deposits and personal loans",
+    "Transfers with duplicate-transaction prevention",
+  ],
+  travel: ["Cruise and hotel search", "Cabin and room availability", "Bookings with guest validation", "Cancellation rules"],
+  admin: ["Product and inventory management", "Order status changes", "User management", "Role-based access for admin-only pages"],
+};
+
+const GENERAL_TESTABLE = [
+  "Choose E-commerce, Banking, Travel & Cruise, or Admin",
+  "Signing in to another module ends the current session",
+  "Each module has its own positive, negative, and edge-case scenarios",
+];

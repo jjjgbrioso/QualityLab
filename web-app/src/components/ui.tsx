@@ -11,7 +11,7 @@ export const buttonStyles = {
   danger: `${BUTTON_BASE} bg-red-700 text-white hover:bg-red-800`,
 };
 
-export const inputStyles = `w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-slate-400 aria-[invalid=true]:border-red-600 ${FOCUS}`;
+export const inputStyles = `w-full rounded-md border border-field bg-surface px-3 py-2 text-sm text-ink placeholder:text-slate-400 aria-[invalid=true]:border-red-600 ${FOCUS}`;
 
 export const linkStyles = `font-medium text-brand-700 underline-offset-2 hover:underline ${FOCUS}`;
 

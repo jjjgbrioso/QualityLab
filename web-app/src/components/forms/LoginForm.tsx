@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { Field, SelectField } from "@/components/forms/fields";
+import { PasswordField } from "@/components/forms/PasswordField";
 import { Alert, buttonStyles } from "@/components/ui";
 import { apiRequest } from "@/lib/client/api";
 import { useSubmit } from "@/lib/client/use-submit";
@@ -61,15 +62,14 @@ export function LoginForm({ next, module }: { next: string; module: AppModule | 
         testId="login-email"
         error={fieldErrors.email}
       />
-      <Field
+      <PasswordField
         label="Password"
         name="password"
-        type="password"
         autoComplete="current-password"
         testId="login-password"
         error={fieldErrors.password}
       />
-      <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} w-full`} data-testid="login-submit-button">
+      <button type="submit" disabled={!ready || pending} className={`${buttonStyles.primary} min-h-12 w-full text-base font-semibold`} data-testid="login-submit-button">
         {pending ? "Signing in..." : module ? `Sign in to ${MODULE_LABELS[module]}` : "Sign in"}
       </button>
     </form>
