@@ -1,0 +1,171 @@
+# Nightly run on a throwaway copy of the app (never the live site):
+#   - Playwright in Chromium, Firefox and WebKit (pull requests run Chromium only);
+#   - the JMeter smoke profile (1 user, 1 minute), failing on any request error. GitHub's shared machines vary
+#     in speed, so response times are a trend only; stress, spike and endurance never run in CI.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 18 * * *" # 18:00 UTC = 02:00 in Manila
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nightly:
+    name: Nightly (all browsers + JMeter smoke)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: qualitylab
+          POSTGRES_PASSWORD: qualitylab_ci
+          POSTGRES_DB: qualitylab_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U qualitylab"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      APP_ENV: local
+      DATABASE_URL: postgresql://qualitylab:qualitylab_ci@localhost:5432/qualitylab_ci
+      JWT_EXPIRES_IN_SECONDS: "7200"
+      DUPLICATE_WINDOW_SECONDS: "30"
+      NEXT_TELEMETRY_DISABLED: "1"
+      TEST_ENV: local
+      JMETER_VERSION: "5.6.3"
+
+    steps:
+      - name: Check out the app
+        uses: actions/checkout@v5
+        with:
+          path: qualitylab
+
+      - name: Check out the Playwright tests
+        uses: actions/checkout@v5
+        with:
+          repository: jjjgbrioso/qualitylab-playwright-typescript
+          path: playwright
+
+      - name: Check out the JMeter tests
+        uses: actions/checkout@v5
+        with:
+          repository: jjjgbrioso/qualitylab-jmeter
+          path: jmeter
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            qualitylab/web-app/package-lock.json
+            playwright/package-lock.json
+
+      - name: Set up Java 21 (for JMeter)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Create a random signing secret for this run
+        run: echo "JWT_SECRET=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
+      - name: Build the app and create the tables
+        working-directory: qualitylab/web-app
+        run: |
+          npm ci
+          npx prisma migrate deploy
+          npm run build
+
+      - name: Start the app on port 3100
+        id: app
+        working-directory: qualitylab/web-app
+        run: |
+          npm run db:reset
+          nohup npm run start -- -p 3100 > "$RUNNER_TEMP/app.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3100/api/v1/health > /dev/null; then echo "App is up"; exit 0; fi
+            sleep 2
+          done
+          echo "The app did not start:"; cat "$RUNNER_TEMP/app.log"; exit 1
+
+      # The test customer is the app's public seed account, which exists only in this throwaway database.
+      - name: Use the seed test customer
+        run: |
+          node <<'EOF'
+          const fs = require('node:fs');
+          const seed = fs.readFileSync('qualitylab/web-app/scripts/seed-data.ts', 'utf8');
+          const match = seed.match(/CUSTOMER_PASSWORD\s*=\s*"([^"]+)"/);
+          if (!match) throw new Error('CUSTOMER_PASSWORD not found in seed-data.ts');
+          console.log(`::add-mask::${match[1]}`);
+          fs.appendFileSync(process.env.GITHUB_ENV, `TEST_USERNAME=alice@qualitylab.test\nTEST_PASSWORD=${match[1]}\n`);
+          EOF
+
+      - name: Install the Playwright tests and all three browsers
+        working-directory: playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium firefox webkit
+
+      - name: Playwright (Chromium, Firefox, WebKit)
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
+        run: |
+          (cd qualitylab/web-app && npm run db:reset > /dev/null)
+          cd playwright && npm test
+
+      - name: Cache JMeter
+        id: jmeter-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/apache-jmeter-${{ env.JMETER_VERSION }}
+          key: jmeter-${{ env.JMETER_VERSION }}
+
+      - name: Download JMeter (checksum verified)
+        if: steps.jmeter-cache.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          base="https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz"
+          curl -sSfL -o jmeter.tgz "$base"
+          curl -sSfL -o jmeter.tgz.sha512 "$base.sha512"
+          echo "$(cut -d' ' -f1 jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
+          tar -xzf jmeter.tgz
+
+      - name: JMeter smoke (1 user, 1 minute)
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
+        env:
+          JMETER_HOME: ${{ runner.temp }}/apache-jmeter-${{ env.JMETER_VERSION }}
+        run: |
+          (cd qualitylab/web-app && npm run db:reset > /dev/null)
+          cd jmeter
+          node scripts/run.js --profile smoke --target local
+          # JMeter exits 0 even when requests fail, so check the error rate here.
+          node -e "
+            const fs = require('node:fs');
+            const run = fs.readFileSync('results/latest.txt', 'utf8').trim();
+            const total = JSON.parse(fs.readFileSync(run + '/dashboard/statistics.json', 'utf8')).Total;
+            console.log('JMeter smoke: ' + total.sampleCount + ' requests, ' + total.errorPct + '% errors, p95 ' + Math.round(total.pct2ResTime) + ' ms');
+            if (total.errorPct > 0) { console.error('Requests failed in the JMeter smoke run.'); process.exit(1); }
+          "
+
+      - name: Save the reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-reports
+          path: |
+            playwright/reports/
+            playwright/test-results/
+            jmeter/results/
+          if-no-files-found: ignore
+
+      - name: Show the app log
+        if: failure()
+        run: tail -n 100 "$RUNNER_TEMP/app.log" || true
