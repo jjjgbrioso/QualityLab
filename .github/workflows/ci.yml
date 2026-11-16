@@ -1,4 +1,5 @@
-# Quick checks for the QualityLab web app: lint, typecheck, unit + integration tests, production build.
+# CI for the QualityLab web app. "Quick checks": lint, typecheck, unit + integration tests, production build.
+# "End-to-end tests": builds this version and runs the Newman, Playwright and Selenium suites against it.
 # Runs on a fresh Linux machine with a throwaway PostgreSQL. It never touches the live site or its database.
 name: CI
 
@@ -77,3 +78,164 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  # Builds THIS version of the app, then runs the three public test suites against it, one after another
+  # (they share the seed customer Alice, so they must not overlap). The data is reset before each suite.
+  end-to-end:
+    name: End-to-end tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: qualitylab
+          POSTGRES_PASSWORD: qualitylab_ci
+          POSTGRES_DB: qualitylab_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U qualitylab"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      APP_ENV: local
+      DATABASE_URL: postgresql://qualitylab:qualitylab_ci@localhost:5432/qualitylab_ci
+      JWT_EXPIRES_IN_SECONDS: "7200"
+      DUPLICATE_WINDOW_SECONDS: "30"
+      NEXT_TELEMETRY_DISABLED: "1"
+      TEST_ENV: local
+      HEADLESS: "true"
+
+    steps:
+      - name: Check out the app
+        uses: actions/checkout@v5
+        with:
+          path: qualitylab
+
+      - name: Check out the API tests
+        uses: actions/checkout@v5
+        with:
+          repository: jjjgbrioso/qualitylab-api-testing
+          path: api-testing
+
+      - name: Check out the Playwright tests
+        uses: actions/checkout@v5
+        with:
+          repository: jjjgbrioso/qualitylab-playwright-typescript
+          path: playwright
+
+      - name: Check out the Selenium tests
+        uses: actions/checkout@v5
+        with:
+          repository: jjjgbrioso/qualitylab-selenium-java
+          path: selenium
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            qualitylab/web-app/package-lock.json
+            api-testing/package-lock.json
+            playwright/package-lock.json
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+          cache-dependency-path: selenium/pom.xml
+
+      - name: Create a random signing secret for this run
+        run: echo "JWT_SECRET=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
+      - name: Build the app and create the tables
+        working-directory: qualitylab/web-app
+        run: |
+          npm ci
+          npx prisma migrate deploy
+          npm run build
+
+      - name: Start the app on port 3100
+        id: app
+        working-directory: qualitylab/web-app
+        run: |
+          npm run db:reset
+          nohup npm run start -- -p 3100 > "$RUNNER_TEMP/app.log" 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3100/api/v1/health > /dev/null; then echo "App is up"; exit 0; fi
+            sleep 2
+          done
+          echo "The app did not start:"; cat "$RUNNER_TEMP/app.log"; exit 1
+
+      # The test accounts are the app's public seed accounts, which exist only in this throwaway database.
+      - name: Use the seed test accounts
+        run: |
+          node <<'EOF'
+          const fs = require('node:fs');
+          const seed = fs.readFileSync('qualitylab/web-app/scripts/seed-data.ts', 'utf8');
+          const read = (name) => {
+            const match = seed.match(new RegExp(`${name}\\s*=\\s*"([^"]+)"`));
+            if (!match) throw new Error(`${name} not found in seed-data.ts`);
+            return match[1];
+          };
+          const customer = read('CUSTOMER_PASSWORD');
+          const admin = read('ADMIN_PASSWORD');
+          console.log(`::add-mask::${customer}`);
+          console.log(`::add-mask::${admin}`);
+          fs.appendFileSync(process.env.GITHUB_ENV, [
+            'TEST_USERNAME=alice@qualitylab.test',
+            `TEST_PASSWORD=${customer}`,
+            'ADMIN_USERNAME=admin@qualitylab.test',
+            `ADMIN_PASSWORD=${admin}`,
+          ].join('\n') + '\n');
+          EOF
+
+      - name: Install the test suites and Chromium
+        run: |
+          (cd api-testing && npm ci)
+          (cd playwright && npm ci && npx playwright install --with-deps chromium)
+
+      # Each suite runs even if an earlier one failed, so one run shows every problem.
+      - name: Newman (API)
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
+        run: |
+          (cd qualitylab/web-app && npm run db:reset > /dev/null)
+          cd api-testing && npm run test:local
+
+      - name: Playwright (Chromium)
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
+        run: |
+          (cd qualitylab/web-app && npm run db:reset > /dev/null)
+          cd playwright && npm run test:chromium
+
+      # -Denv=local is required: the pom's default (staging) is a system property that wins over ENV.
+      - name: Selenium + Cucumber (Chrome)
+        if: ${{ !cancelled() && steps.app.outcome == 'success' }}
+        run: |
+          (cd qualitylab/web-app && npm run db:reset > /dev/null)
+          cd selenium && bash mvnw -B test -Denv=local
+
+      - name: Save the reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: end-to-end-reports
+          path: |
+            api-testing/reports/
+            playwright/reports/
+            playwright/test-results/
+            selenium/reports/summary/
+            selenium/target/cucumber-reports/
+            selenium/target/screenshots/
+          if-no-files-found: ignore
+
+      - name: Show the app log
+        if: failure()
+        run: tail -n 100 "$RUNNER_TEMP/app.log" || true
