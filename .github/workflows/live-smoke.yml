@@ -1,0 +1,41 @@
+# Read-only smoke test of the live site after each production deploy.
+# Vercel does not create GitHub deployments for this project; it sets a commit status named "Vercel".
+# This workflow runs when that status turns to success on a commit that is on main.
+name: Live smoke test
+
+on:
+  status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Live smoke test
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.context == 'Vercel' && github.event.state == 'success' &&
+       contains(github.event.branches.*.name, 'main'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the app
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      # Vercel's status can arrive a moment before the new version answers every request.
+      - name: Wait for the live site to answer
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf https://quality-lab-jb.vercel.app/api/v1/health > /dev/null; then exit 0; fi
+            sleep 5
+          done
+          echo "The live site did not answer its health check"; exit 1
+
+      - name: Run the smoke test
+        run: node .github/scripts/live-smoke.mjs
