@@ -1,0 +1,79 @@
+# Quick checks for the QualityLab web app: lint, typecheck, unit + integration tests, production build.
+# Runs on a fresh Linux machine with a throwaway PostgreSQL. It never touches the live site or its database.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer push to the same branch or pull request cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  quick-checks:
+    name: Quick checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web-app
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: qualitylab
+          POSTGRES_PASSWORD: qualitylab_ci
+          POSTGRES_DB: qualitylab_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U qualitylab"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      APP_ENV: local
+      # Throwaway database that exists only for this run. Integration tests wipe and reseed it.
+      DATABASE_URL: postgresql://qualitylab:qualitylab_ci@localhost:5432/qualitylab_test
+      TEST_DATABASE_URL: postgresql://qualitylab:qualitylab_ci@localhost:5432/qualitylab_test
+      JWT_EXPIRES_IN_SECONDS: "7200"
+      DUPLICATE_WINDOW_SECONDS: "30"
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web-app/package-lock.json
+
+      - name: Create a random signing secret for this run
+        run: echo "JWT_SECRET=$(openssl rand -base64 48)" >> "$GITHUB_ENV"
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
